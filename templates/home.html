@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FMJ Careers</title>
+    <style>
+      /* Import Google Fonts */
+      @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Open+Sans:wght@400;600&display=swap');
+
+      body {
+        font-family: 'Open Sans', sans-serif;
+        background-color: #f4f4f9; /* Light grey background for better contrast */
+        color: #333; /* Darker text color for better readability */
+        margin: 0;
+        padding: 0;
+        line-height: 1.6;
+      }
+
+      #container {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 20px 15px;
+        background: white; /* White background for content */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+        border-radius: 8px; /* Rounded corners */
+      }
+
+      .header {
+        display: flex;
+        flex-direction: column;
+        align-items: center; /* Center the content horizontally */
+        margin-bottom: 30px; /* Add more space below the header */
+      }
+
+      #logo {
+        height: 60px; /* Increase logo size */
+        margin-bottom: 10px; /* Space between the logo and the text */
+      }
+
+      h1 {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 36px;
+        font-weight: 600;
+        color: #2c3e50; /* Darker shade for the heading */
+        margin: 0; /* Remove default margin */
+      }
+
+      #banner {
+        width: 100%;
+        height: 360px;
+        object-fit: cover;
+        border-radius: 8px; /* Match the border radius */
+        margin-bottom: 30px; /* Space below the banner */
+      }
+
+      h2 {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 28px;
+        color: #34495e; /* Slightly different shade for subheadings */
+        text-align: center;
+        font-weight: 600;
+        margin-top: 20px;
+        margin-bottom: 20px;
+      }
+
+      p {
+        font-size: 18px; /* Slightly larger font size for paragraphs */
+        color: #555; /* Softer color for paragraphs */
+        margin-bottom: 20px;
+      }
+
+      .button-container {
+        display: flex;
+        justify-content: center; /* Centers the button container */
+        margin-top: 30px;
+      }
+
+      button {
+          font-family: 'Montserrat', sans-serif;
+          font-size: 18px;
+          font-weight: 600;
+          color: white;
+          background-color: #ff69b4; /* Pink button color */
+          border: none;
+          padding: 12px 24px;
+          border-radius: 4px;
+          cursor: pointer;
+          transition: background-color 0.3s ease;
+      }
+
+      button:hover {
+          background-color: #ff1493; /* Darker pink shade on hover */
+      }
+
+      /* Media Query for Mobile Devices */
+      @media (max-width: 600px) {
+        h1 {
+          font-size: 28px;
+        }
+
+        h2 {
+          font-size: 24px;
+        }
+
+        p {
+          font-size: 16px;
+        }
+
+        #logo {
+          height: 50px; /* Reduce logo size on mobile */
+        }
+
+        button {
+          font-size: 16px;
+          padding: 10px 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container">
+      <div class="header">
+        <img id="logo" src="static/logo.jpg" alt="Company Logo">
+        <h1>FMJ Capitals Careers</h1>
+      </div>
+      <img id="banner" src="static/image1.jpg" alt="Banner Image">
+      <h2>About FMJ Careers</h2>
+      <p>
+        At FMJ, we see investing differently. Today’s financial system is complex, exclusive, and expensive - making it hard for the typical person to start investing.
+        <br><br>
+        So, we’re building a platform without digital walls and complex barriers. A platform that empowers you to see new possibilities for your money - and helps make them a reality.
+      </p>
+
+      <h2>Open Positions</h2>
+      <p>TODO - Show the jobs here</p>
+      
+      <!-- Centered Button Container -->
+      <div class="button-container">
+        <button>Contact Us</button>
+      </div>
+      
+    </div>
+  </body>
+</html>
