@@ -15,6 +15,9 @@
         margin: 0;
         padding: 0;
         line-height: 1.6;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
       }
 
       #container {
@@ -24,6 +27,7 @@
         background: white; /* White background for content */
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
         border-radius: 8px; /* Rounded corners */
+        flex-grow: 1;
       }
 
       .header {
@@ -70,6 +74,69 @@
         margin-bottom: 20px;
       }
 
+      .job-card {
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center; /* Centers the items vertically */
+        justify-content: space-between; /* Distributes space between the two columns */
+      }
+
+      .job-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      .job-title {
+        color: #34495e;
+        margin-bottom: 8px;
+        font-size: 20px;
+        font-weight: 600;
+      }
+
+      .job-detail {
+        font-size: 16px;
+        color: #555;
+        margin-bottom: 4px;
+      }
+
+      .job-content {
+        display: flex;
+        width: 100%;
+      }
+
+      .job-details {
+        flex: 0 0 70%; /* Takes 70% of the width */
+      }
+
+      .apply-button-container {
+        flex: 0 0 30%; /* Takes 30% of the width */
+        display: flex;
+        align-items: center; /* Centers the button vertically */
+        justify-content: flex-end; /* Aligns the button to the right */
+      }
+
+      .apply-button {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 16px;
+        font-weight: 600;
+        color: white;
+        background-color: #ff69b4; 
+        border: none;
+        padding: 10px 20px;
+        border-radius: 50px; 
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+
+      .apply-button:hover {
+        background-color: #ff1493; 
+      }
+
       .button-container {
         display: flex;
         justify-content: center; /* Centers the button container */
@@ -77,20 +144,28 @@
       }
 
       button {
-          font-family: 'Montserrat', sans-serif;
-          font-size: 18px;
-          font-weight: 600;
-          color: white;
-          background-color: #ff69b4; /* Pink button color */
-          border: none;
-          padding: 12px 24px;
-          border-radius: 4px;
-          cursor: pointer;
-          transition: background-color 0.3s ease;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 18px;
+        font-weight: 600;
+        color: white;
+        background-color: #ff69b4; /* Pink button color */
+        border: none;
+        padding: 12px 24px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
       }
 
       button:hover {
-          background-color: #ff1493; /* Darker pink shade on hover */
+        background-color: #ff1493; /* Darker pink shade on hover */
+      }
+
+      footer {
+        background-color: #ff69b4; /* Pink background for footer */
+        color: white; /* White text color */
+        text-align: center;
+        padding: 10px 0;
+        font-size: 14px;
       }
 
       /* Media Query for Mobile Devices */
@@ -115,6 +190,23 @@
           font-size: 16px;
           padding: 10px 20px;
         }
+
+        .job-card {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .apply-button-container {
+          width: 100%; 
+          margin-top: 10px;
+          text-align: right; /* Ensures button aligns to the right on mobile */
+        }
+
+        .apply-button {
+          font-size: 14px; /* Adjust font size for mobile */
+          padding: 8px 16px; /* Adjust padding for mobile */
+          margin-left: 0; /* Remove margin on mobile */
+        }
       }
     </style>
   </head>
@@ -133,13 +225,21 @@
       </p>
 
       <h2>Open Positions</h2>
-      <p>TODO - Show the jobs here</p>
+      <div>
+        {% for job in jobs %}
+          {% include 'jobitem.html' %}
+        {% endfor %}
+      </div>
       
       <!-- Centered Button Container -->
       <div class="button-container">
         <button>Contact Us</button>
       </div>
-      
     </div>
+    
+    <!-- Footer Section -->
+    <footer>
+      © 2024, FMJ Capitals
+    </footer>
   </body>
 </html>
