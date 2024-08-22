@@ -1,7 +1,8 @@
 from sqlalchemy import create_engine, text
+import os
 
 # Corrected connection string format
-db_connection_string = "postgresql+psycopg2://postgres.gqolvrshzzhrarajqgjz:Omodara4wife$@aws-0-eu-west-2.pooler.supabase.com/postgres"
+db_connection_string = os.environ['DB_KEY']
 
 engine = create_engine(
     db_connection_string,
