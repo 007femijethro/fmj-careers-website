@@ -1,46 +1,48 @@
-<h4 style="text-align: center; font-size: 24px; font-family: 'Montserrat', sans-serif;">APPLICATION FORM</h4>
-<form action="/job/{{ job['id'] }}/apply" method="post" style="max-width: 600px; margin: 0 auto;">
-  <div class="mb-2">
-    <label>Full Name</label><br>
-    <input type="text" name="full_name" placeholder="Femi Jethro" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
-  </div>
+<div style="max-width: 700px; margin: 30px auto; padding: 40px; background-color: #f5f5f5; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+  <h4 style="text-align: center; font-size: 24px; font-family: 'Montserrat', sans-serif; margin-bottom: 20px;">APPLICATION FORM</h4>
+  <form action="/job/{{ job['id'] }}/apply" method="post">
+    <div class="mb-2">
+      <label>Full Name</label><br>
+      <input type="text" name="full_name" placeholder="Femi Jethro" style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px;">
+    </div>
 
-  <div class="mb-2">
-    <label>Email</label><br>
-    <input type="email" name="email" placeholder="devfemijethro@gmail.com" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
-  </div>
+    <div class="mb-2">
+      <label>Email</label><br>
+      <input type="email" name="email" placeholder="devfemijethro@gmail.com" style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px;">
+    </div>
 
-  <div class="mb-2">
-    <label>LinkedIn URL</label><br>
-    <input type="url" name="linkedin_url" placeholder="https://linkedin.com/in/femijethro" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
-  </div>
+    <div class="mb-2">
+      <label>LinkedIn URL</label><br>
+      <input type="url" name="linkedin_url" placeholder="https://linkedin.com/in/femijethro" style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px;">
+    </div>
 
-  <div class="mb-2">
-    <label>Work Experience</label><br>
-    <textarea name="work_experience" placeholder="Describe your work experience..." rows="5" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px;"></textarea>
-  </div>
+    <div class="mb-2">
+      <label>Work Experience</label><br>
+      <textarea name="work_experience" placeholder="Describe your work experience..." rows="5" style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px;"></textarea>
+    </div>
 
-  <div class="mb-2">
-    <label>Education</label><br>
-    <textarea name="education" placeholder="Describe your education background..." rows="4" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px;"></textarea>
-  </div>
+    <div class="mb-2">
+      <label>Education</label><br>
+      <textarea name="education" placeholder="Describe your education background..." rows="4" style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px;"></textarea>
+    </div>
 
-  <div class="mb-2">
-    <label>Skills</label><br>
-    <input type="text" name="skills" placeholder="E.g., Python, Project Management, Communication" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
-  </div>
+    <div class="mb-2">
+      <label>Skills</label><br>
+      <input type="text" name="skills" placeholder="E.g., Python, Project Management, Communication" style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px;">
+    </div>
 
-  <div class="mb-2">
-    <label>Cover Letter</label><br>
-    <textarea name="cover_letter" placeholder="Write your cover letter..." rows="6" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px;"></textarea>
-  </div>
+    <div class="mb-2">
+      <label>Cover Letter</label><br>
+      <textarea name="cover_letter" placeholder="Write your cover letter..." rows="6" style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px;"></textarea>
+    </div>
 
-  <div class="mb-2">
-    <label>Upload Resume</label><br>
-    <input type="file" name="resume" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
-  </div>
+    <div class="mb-2">
+      <label>Upload Resume</label><br>
+      <input type="file" name="resume" style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px;">
+    </div>
 
-  <div style="text-align: center; margin-top: 20px;">
-    <input type="submit" value="Submit Application" style="background-color: #ff69b4; color: white; border: none; padding: 10px 20px; border-radius: 50px; cursor: pointer;">
-  </div>
-</form>
+    <div style="text-align: center; margin-top: 20px;">
+      <input type="submit" value="Submit Application" style="background-color: #ff69b4; color: white; border: none; padding: 10px 20px; border-radius: 50px; cursor: pointer;">
+    </div>
+  </form>
+</div>

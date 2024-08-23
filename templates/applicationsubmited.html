@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application Submitted - FMJ Careers</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Open+Sans:wght@400;600&display=swap');
+
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        #container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 20px 15px;
+            background: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            flex-grow: 1;
+            text-align: center;
+        }
+
+        .header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        #logo {
+            height: 60px;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 36px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        p {
+            font-size: 18px;
+            color: #555;
+            margin-bottom: 20px;
+        }
+
+        footer {
+            background-color: #ff69b4;
+            color: white;
+            text-align: center;
+            padding: 10px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    {% include 'nav.html' %}
+
+    <div id="container">
+        <div class="header">
+            <img id="logo" src="../../static/logo.jpg" alt="Company Logo">
+            <h1>FMJ Capitals Careers</h1>
+        </div>
+
+        <h2>Application Submitted</h2>
+        <p>Hello {{ application['full_name'] }}, your application for the role of {{job['title']}} has been submitted!</p>
+        <p>Thank you for your interest. We will review your application and get back to you soon via {{ application['email'] }}.</p>
+    </div>
+
+    <footer>
+        © 2024, FMJ Capitals (v.1.5)
+    </footer>
+</body>
+</html>

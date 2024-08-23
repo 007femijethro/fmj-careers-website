@@ -34,5 +34,6 @@ def get_job(id):
         return dict(row) 
 
 
+#def add_application_to_db(job_id, data)
 
 
