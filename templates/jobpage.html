@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ job['title'] }} - FMJ Careers</title>
+    <style>
+      /* Import Google Fonts */
+      @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Open+Sans:wght@400;600&display=swap');
+
+      body {
+        font-family: 'Open Sans', sans-serif;
+        background-color: #f4f4f9; /* Light grey background for better contrast */
+        color: #333; /* Darker text color for better readability */
+        margin: 0;
+        padding: 0;
+        line-height: 1.6;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+
+      #container {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 20px 15px;
+        background: white; /* White background for content */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+        border-radius: 8px; /* Rounded corners */
+        flex-grow: 1;
+      }
+
+      .header {
+        display: flex;
+        flex-direction: column;
+        align-items: center; /* Center the content horizontally */
+        margin-bottom: 30px; /* Add more space below the header */
+      }
+
+      #logo {
+        height: 60px; /* Increase logo size */
+        margin-bottom: 10px; /* Space between the logo and the text */
+      }
+
+      h1 {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 36px;
+        font-weight: 600;
+        color: #2c3e50; /* Darker shade for the heading */
+        margin: 0; /* Remove default margin */
+      }
+
+      h2 {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 28px;
+        color: #34495e; /* Slightly different shade for subheadings */
+        text-align: center;
+        font-weight: 600;
+        margin-top: 20px;
+        margin-bottom: 20px;
+      }
+      
+      h3 {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 22px; /* Adjusted font size for h3 */
+        color: #34495e; /* Slightly different shade for subheadings */
+        text-align: center;
+        font-weight: 600;
+        margin-top: 20px;
+        margin-bottom: 20px;
+      }
+
+      p {
+        font-size: 18px; /* Slightly larger font size for paragraphs */
+        color: #555; /* Softer color for paragraphs */
+        margin-bottom: 20px;
+      }
+
+      .section {
+        margin-bottom: 30px;
+      }
+
+      .section-title {
+        font-size: 22px;
+        font-weight: 600;
+        color: #34495e;
+        margin-bottom: 10px;
+      }
+
+      .section-content {
+        font-size: 16px;
+        color: #555;
+      }
+
+      ul {
+        padding-left: 20px;
+        color: #555;
+        margin-bottom: 20px;
+      }
+
+      li {
+        margin-bottom: 10px;
+        list-style-type: disc;
+      }
+
+      .apply-button-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 30px;
+      }
+
+      .apply-button {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 16px;
+        font-weight: 600;
+        color: white;
+        background-color: #ff69b4;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 50px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+
+      .apply-button:hover {
+        background-color: #ff1493;
+      }
+
+      footer {
+        background-color: #ff69b4; /* Pink background for footer */
+        color: white; /* White text color */
+        text-align: center;
+        padding: 10px 0;
+        font-size: 14px;
+      }
+
+      /* Media Query for Mobile Devices */
+      @media (max-width: 600px) {
+        h1 {
+          font-size: 28px;
+        }
+
+        h2 {
+          font-size: 24px;
+        }
+
+        h3 {
+          font-size: 20px; /* Adjusted font size for mobile */
+        }
+
+        p {
+          font-size: 16px;
+        }
+
+        #logo {
+          height: 50px; /* Reduce logo size on mobile */
+        }
+
+        .apply-button {
+          font-size: 14px; /* Adjust font size for mobile */
+          padding: 8px 16px; /* Adjust padding for mobile */
+        }
+      }
+    </style>
+  </head>
+  <body>
+    {% include 'nav.html' %}
+    
+    <div id="container">
+      <div class="header">
+        <img id="logo" src="static/logo.jpg" alt="Company Logo">
+        <h1>FMJ Capitals Careers</h1>
+      </div>
+
+      <h2>{{ job['title'] }}</h2>
+      <p><strong>Location:</strong> {{ job['location'] }}</p>
+      {% if 'salary' in job %}
+      <p><strong>Salary:</strong> {{ job['currency'] }}{{ job['salary'] }}</p>
+      {% endif %}
+
+
+      <div class="section">
+        <h3 class="section-title">Responsibilities</h3>
+        <ul class="section-content">
+          {% for responsibility in job['responsibilities'].split('\n') %}
+            <li>{{ responsibility }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <div class="section">
+        <h3 class="section-title">Requirements</h3>
+        <ul class="section-content">
+          {% for requirement in job['requirements'].split('\n') %}
+            <li>{{ requirement }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <div class="apply-button-container">
+        <button class="apply-button">Apply Now</button>
+      </div>
+    </div>
+
+    <footer>
+      © 2024, FMJ Capitals(v.1.2)
+    </footer>
+  </body>
+</html>
