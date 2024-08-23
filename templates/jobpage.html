@@ -10,8 +10,8 @@
 
       body {
         font-family: 'Open Sans', sans-serif;
-        background-color: #f4f4f9; /* Light grey background for better contrast */
-        color: #333; /* Darker text color for better readability */
+        background-color: #f4f4f9;
+        color: #333;
         margin: 0;
         padding: 0;
         line-height: 1.6;
@@ -24,55 +24,53 @@
         max-width: 720px;
         margin: 0 auto;
         padding: 20px 15px;
-        background: white; /* White background for content */
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
-        border-radius: 8px; /* Rounded corners */
+        background: white;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
         flex-grow: 1;
       }
 
       .header {
         display: flex;
         flex-direction: column;
-        align-items: center; /* Center the content horizontally */
-        margin-bottom: 30px; /* Add more space below the header */
+        align-items: center;
+        margin-bottom: 30px;
       }
 
       #logo {
-        height: 60px; /* Increase logo size */
-        margin-bottom: 10px; /* Space between the logo and the text */
+        height: 60px;
+        margin-bottom: 10px;
       }
 
       h1 {
         font-family: 'Montserrat', sans-serif;
         font-size: 36px;
         font-weight: 600;
-        color: #2c3e50; /* Darker shade for the heading */
-        margin: 0; /* Remove default margin */
+        color: #2c3e50;
+        margin: 0;
       }
 
       h2 {
         font-family: 'Montserrat', sans-serif;
         font-size: 28px;
-        color: #34495e; /* Slightly different shade for subheadings */
+        color: #34495e;
         text-align: center;
         font-weight: 600;
-        margin-top: 20px;
-        margin-bottom: 20px;
+        margin: 20px 0;
       }
       
       h3 {
         font-family: 'Montserrat', sans-serif;
-        font-size: 22px; /* Adjusted font size for h3 */
-        color: #34495e; /* Slightly different shade for subheadings */
+        font-size: 22px;
+        color: #34495e;
         text-align: center;
         font-weight: 600;
-        margin-top: 20px;
-        margin-bottom: 20px;
+        margin: 20px 0;
       }
 
       p {
-        font-size: 18px; /* Slightly larger font size for paragraphs */
-        color: #555; /* Softer color for paragraphs */
+        font-size: 18px;
+        color: #555;
         margin-bottom: 20px;
       }
 
@@ -127,14 +125,13 @@
       }
 
       footer {
-        background-color: #ff69b4; /* Pink background for footer */
-        color: white; /* White text color */
+        background-color: #ff69b4;
+        color: white;
         text-align: center;
         padding: 10px 0;
         font-size: 14px;
       }
 
-      /* Media Query for Mobile Devices */
       @media (max-width: 600px) {
         h1 {
           font-size: 28px;
@@ -145,7 +142,7 @@
         }
 
         h3 {
-          font-size: 20px; /* Adjusted font size for mobile */
+          font-size: 20px;
         }
 
         p {
@@ -153,12 +150,12 @@
         }
 
         #logo {
-          height: 50px; /* Reduce logo size on mobile */
+          height: 50px;
         }
 
         .apply-button {
-          font-size: 14px; /* Adjust font size for mobile */
-          padding: 8px 16px; /* Adjust padding for mobile */
+          font-size: 14px;
+          padding: 8px 16px;
         }
       }
     </style>
@@ -170,7 +167,6 @@
       <div class="header">
         <img id="logo" src="../static/logo.jpg" alt="Company Logo">
         <h1>FMJ Capitals Careers</h1>
-        
       </div>
 
       <h2>{{ job['title'] }}</h2>
@@ -178,7 +174,6 @@
       {% if 'salary' in job %}
       <p><strong>Salary:</strong> {{ job['currency'] }}{{ job['salary'] }}</p>
       {% endif %}
-
 
       <div class="section">
         <h3 class="section-title">Responsibilities</h3>
@@ -197,14 +192,14 @@
           {% endfor %}
         </ul>
       </div>
-
-      <div class="apply-button-container">
-        <button class="apply-button">Apply Now</button>
+      
+      {% include 'applicationform.html' %}
+      
       </div>
     </div>
 
     <footer>
-      © 2024, FMJ Capitals(v.1.4)
+      © 2024, FMJ Capitals(v.1.5)
     </footer>
   </body>
 </html>
