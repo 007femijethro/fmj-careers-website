@@ -40,15 +40,17 @@ def add_application_to_db(job_id, data):
         with conn.begin():
             query = text('''
                 INSERT INTO applications (
-                    job_id, full_name, email, linkedin_url, education, work_experience, resume_url
+                    job_id, full_name, email, country_code, phone_number, linkedin_url, education, work_experience, resume_url
                 ) VALUES (
-                    :job_id, :full_name, :email, :linkedin_url, :education, :work_experience, :resume_url
+                    :job_id, :full_name, :email, :country_code, :phone_number, :linkedin_url, :education, :work_experience, :resume_url
                 )
             ''')
             conn.execute(query, {
                 'job_id': job_id,
                 'full_name': data['full_name'],
                 'email': data['email'],
+                'country_code': data['country_code'],
+                'phone_number': data['phone_number'],
                 'linkedin_url': data['linkedin_url'],
                 'education': data['education'],
                 'work_experience': data['work_experience'],
