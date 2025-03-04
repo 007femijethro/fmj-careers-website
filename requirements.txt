@@ -2,3 +2,4 @@ Flask
 sqlalchemy
 gunicorn
 psycopg2
+python-dotenv
