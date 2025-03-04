@@ -1,43 +1,34 @@
 from sqlalchemy import create_engine, text
 import os
+from dotenv import load_dotenv
 
-# Corrected connection string format
-db_connection_string = os.environ['DB_KEY']
+# Load environment variables from .env file
+load_dotenv()
 
-engine = create_engine(
-    db_connection_string,
-    connect_args={
-        "sslmode": "require",  # Ensures SSL is used
-        "sslrootcert": "/etc/ssl/cert.pem"  # Path to the SSL certificate
-    }
-)
+# Get connection string
+SUPABASE_URL = os.getenv('SUPABASE_URL')
+
+# Create engine
+engine = create_engine(SUPABASE_URL, connect_args={"sslmode": "require"})
+  
 
 def get_jobs():
     with engine.connect() as conn:
-        result = conn.execute(text('SELECT * FROM "fmjJobs"'))
+        result = conn.execute(text('SELECT * FROM "fmjjobs"'))  # Ensure table name is correct
 
-        list_of_jobs = []
-
-        for row in result.mappings():
-            row_dict = dict(row)  
-            list_of_jobs.append(row_dict) 
+        list_of_jobs = [dict(row) for row in result.mappings()]
     return list_of_jobs
 
 def get_job(id):
     with engine.connect() as conn:
-        result = conn.execute(text('SELECT * FROM "fmjJobs" WHERE id = :val'), {'val': id})
+        result = conn.execute(text('SELECT * FROM "fmjjobs" WHERE id = :val'), {'val': id})
 
-        row = result.mappings().first()  
-    if row is None:
-        return None
-    else:
-        return dict(row) 
-  
+        row = result.mappings().first()
+    return dict(row) if row else None
 
 def add_application_to_db(job_id, data):
     with engine.connect() as conn:
-        # Begin a transaction
-        with conn.begin():
+        with conn.begin():  # Start a transaction
             query = text('''
                 INSERT INTO applications (
                     job_id, full_name, email, country_code, phone_number, linkedin_url, education, work_experience, resume_url
