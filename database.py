@@ -5,28 +5,39 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-# Get connection string
+# Get database URL from .env file
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 
-# Create engine
+# Create database engine
 engine = create_engine(SUPABASE_URL, connect_args={"sslmode": "require"})
-  
 
 def get_jobs():
+    """Fetch all jobs from the database."""
     with engine.connect() as conn:
-        result = conn.execute(text('SELECT * FROM "fmjjobs"'))  # Ensure table name is correct
-
+        result = conn.execute(text('SELECT * FROM "fmjjobs"'))
         list_of_jobs = [dict(row) for row in result.mappings()]
     return list_of_jobs
 
 def get_job(id):
+    """Fetch a specific job by ID and ensure correct data format."""
     with engine.connect() as conn:
-        result = conn.execute(text('SELECT * FROM "fmjjobs" WHERE id = :val'), {'val': id})
+       result = conn.execute(text('SELECT * FROM "fmjjobs" WHERE id = :val'), {'val': id})
+       row = result.mappings().first()
 
-        row = result.mappings().first()
-    return dict(row) if row else None
+    if row:
+        job = dict(row)
+
+        # Ensure '\n' is properly recognized and split into list items
+        job['responsibilities'] = [resp.strip() for resp in job['responsibilities'].replace("\\n", "\n").split("\n") if resp.strip()]
+        job['requirements'] = [req.strip() for req in job['requirements'].replace("\\n", "\n").split("\n") if req.strip()]
+
+        return job
+    return None
+
+
 
 def add_application_to_db(job_id, data):
+    """Insert job application into the database."""
     with engine.connect() as conn:
         with conn.begin():  # Start a transaction
             query = text('''

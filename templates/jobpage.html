@@ -178,22 +178,24 @@
       {% endif %}
 
       <div class="section">
-        <h3 class="section-title">Responsibilities</h3>
+        <h3 class="section-title">Responsibilities:</h3>
         <ul class="section-content">
-          {% for responsibility in job['responsibilities'].split('\n') %}
-            <li>{{ responsibility }}</li>
-          {% endfor %}
+            {% for responsibility in job['responsibilities'] %}
+                <li>{{ responsibility }}</li>
+            {% endfor %}
         </ul>
       </div>
 
       <div class="section">
-        <h3 class="section-title">Requirements</h3>
+        <h3 class="section-title">Requirements:</h3>
         <ul class="section-content">
-          {% for requirement in job['requirements'].split('\n') %}
-            <li>{{ requirement }}</li>
-          {% endfor %}
+            {% for requirement in job['requirements'] %}
+                <li>{{ requirement }}</li>
+            {% endfor %}
         </ul>
       </div>
+
+
       
       {% include 'applicationform.html' %}
       
