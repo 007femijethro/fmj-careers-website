@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>For The Love of My Life</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Montserrat:wght@300;400&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #ff6b8b;
+      --primary-light: #ffa5b6;
+      --primary-pale: #ffebee;
+      --accent: #ffb6c1;
+      --dark: #880e4f;
+      --light: #fce4ec;
+      --white: #ffffff;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+      --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+      --shadow-lg: 0 10px 20px rgba(0,0,0,0.1);
+      --radius: 8px;
+      --transition: all 0.3s ease;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-color: var(--primary-pale);
+      color: var(--dark);
+      line-height: 1.7;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      background-image: radial-gradient(circle at 10% 20%, rgba(255,214,214,0.5) 0%, rgba(255,214,235,0.5) 90%);
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 2rem;
+      background: var(--white);
+      box-shadow: var(--shadow-lg);
+      border-radius: var(--radius);
+      flex-grow: 1;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--accent);
+    }
+
+    .container::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 10px;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 3rem;
+      position: relative;
+    }
+
+    h1, h2, h3 {
+      font-family: 'Playfair Display', serif;
+      font-weight: 700;
+      color: var(--dark);
+    }
+
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      color: var(--primary);
+      font-family: 'Dancing Script', cursive;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+      color: var(--primary);
+    }
+    
+    h3 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+      position: relative;
+      padding-bottom: 0.5rem;
+    }
+
+    h3::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 50px;
+      height: 3px;
+      background: var(--primary);
+    }
+
+    .heart {
+      font-size: 1.5rem;
+      color: var(--primary);
+      animation: pulse 1.5s infinite;
+      display: inline-block;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.3); }
+      100% { transform: scale(1); }
+    }
+
+    .section {
+      margin-bottom: 3rem;
+      padding: 1.5rem;
+      background-color: rgba(255, 255, 255, 0.8);
+      border-radius: var(--radius);
+      position: relative;
+      border: 1px solid var(--light);
+    }
+
+    .section::before {
+      content: "";
+      position: absolute;
+      top: -10px;
+      left: 20px;
+      width: 40px;
+      height: 20px;
+      background-color: var(--white);
+      clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+    }
+
+    ul {
+      list-style: none;
+    }
+
+    li {
+      margin-bottom: 1rem;
+      padding-left: 2rem;
+      position: relative;
+    }
+
+    li::before {
+      content: "❤";
+      position: absolute;
+      left: 0;
+      color: var(--primary);
+    }
+
+    .love-letter {
+      font-style: italic;
+      line-height: 1.8;
+      font-size: 1.1rem;
+      background-color: rgba(255, 235, 238, 0.5);
+      padding: 2rem;
+      border-radius: var(--radius);
+      border-left: 4px solid var(--primary);
+    }
+
+    .photo-frame {
+      width: 200px;
+      height: 200px;
+      margin: 2rem auto;
+      border: 8px solid var(--white);
+      border-radius: 50%;
+      box-shadow: 0 4px 8px rgba(222, 82, 132, 0.3);
+      overflow: hidden;
+      background-color: var(--light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .photo-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .btn-container {
+      text-align: center;
+      margin-top: 3rem;
+    }
+
+    .btn {
+      display: inline-block;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 500;
+      color: var(--white);
+      background: linear-gradient(to right, var(--primary), var(--primary-light));
+      padding: 1rem 2.5rem;
+      border-radius: 50px;
+      text-decoration: none;
+      transition: var(--transition);
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(222, 82, 132, 0.3);
+      font-size: 1.1rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(222, 82, 132, 0.4);
+      background: linear-gradient(to right, var(--primary-light), var(--primary));
+    }
+
+    .btn::after {
+      content: "";
+      position: absolute;
+      top: -50%;
+      left: -60%;
+      width: 200%;
+      height: 200%;
+      background: rgba(255, 255, 255, 0.2);
+      transform: rotate(30deg);
+      transition: var(--transition);
+    }
+
+    .btn:hover::after {
+      left: 100%;
+    }
+
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      color: var(--dark);
+      font-size: 0.875rem;
+      background-color: var(--light);
+    }
+
+    .floating-hearts {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .heart-shape {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background-color: var(--primary);
+      transform: rotate(45deg);
+      opacity: 0;
+      animation: float 10s linear infinite;
+    }
+
+    .heart-shape::before,
+    .heart-shape::after {
+      content: "";
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background-color: var(--primary);
+      border-radius: 50%;
+    }
+
+    .heart-shape::before {
+      top: -10px;
+      left: 0;
+    }
+
+    .heart-shape::after {
+      top: 0;
+      left: -10px;
+    }
+
+    @keyframes float {
+      0% {
+        transform: rotate(45deg) translateY(0) translateX(0);
+        opacity: 0;
+      }
+      10% {
+        opacity: 0.8;
+      }
+      100% {
+        transform: rotate(45deg) translateY(-100vh) translateX(100vw);
+        opacity: 0;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        margin: 0;
+        padding: 1.5rem;
+        border-radius: 0;
+      }
+      
+      h1 {
+        font-size: 2.5rem;
+      }
+      
+      h2 {
+        font-size: 1.75rem;
+      }
+      
+      .photo-frame {
+        width: 150px;
+        height: 150px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="floating-hearts" id="hearts-container"></div>
+
+  <div class="container">
+    <header class="header">
+      <h1>To My Beautiful BabyJay<span class="heart">❤</span></h1>
+      <div class="photo-frame">
+        <!-- Replace with your actual photo path -->
+        <img id="logo" src="static/luv.jpg" alt="Company Logo">
+      </div>
+    </header>
+
+    <main>
+      <section class="section">
+        <h2>What makes you speacial</h2>
+        <ul>
+          <li>Your smile brightens my darkest days, turning storms into rainbows</li>
+          <li>Your height feels like destiny - perfectly designed to fit in my arms</li>
+          <li>Your kindness flows like a river, touching every life it meets with its gentle current</li>
+          <li>Your smartness dazzles me - the way your mind works is my favorite mystery to unravel</li>
+          <li>Your strength (BossLady) moves mountains while making it look effortless - my everyday inspiration</li>
+          <li>Your brilliance isn't just in your mind, but in your soul that radiates wisdom and light</li>
+          <li>You see potential in me I never knew existed, and that vision has changed who I am</li>
+        </ul>
+      </section>
+
+      <section class="section">
+        <h2>My Promise to You</h2>
+        <div class="love-letter">
+          <p>My intending lover,</p>
+          <p>I know we just met, but it feels like we have known for years.</p>
+          <p>I promise to stand by your side through all of life's adventures, to be your shelter in the storms, and your biggest cheerleader in your triumphs.</p>
+          <p>I promise to listen, to understand, and to grow with you. To love you not only for who you are today, but for who you'll become tomorrow.</p>
+          <p>No matter what life brings, my heart will always find its home in yours.</p>
+          <p>Hopefully Forever yours,</p>
+        </div>
+      </section>
+
+      <div class="btn-container">
+        <button class="btn" id="surpriseBtn">Click for a Surprise</button>
+      </div>
+    </main>
+  </div>
+
+  <footer>
+    Made with <span class="heart">❤</span> for you - Today and always
+  </footer>
+
+  <script>
+    // Create floating hearts
+    function createHearts() {
+      const container = document.getElementById('hearts-container');
+      const colors = ['#ff6b8b', '#ffa5b6', '#ffb6c1', '#ff9ff3'];
+      
+      for (let i = 0; i < 15; i++) {
+        const heart = document.createElement('div');
+        heart.classList.add('heart-shape');
+        heart.style.left = Math.random() * 100 + 'vw';
+        heart.style.top = Math.random() * 100 + 'vh';
+        heart.style.animationDelay = Math.random() * 10 + 's';
+        heart.style.animationDuration = 5 + Math.random() * 10 + 's';
+        heart.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        container.appendChild(heart);
+      }
+    }
+
+    // Surprise button functionality
+    document.getElementById('surpriseBtn').addEventListener('click', function() {
+      alert("JETHRO LOVES YOU MORE THAN WORDS CAN EXPRESS! ❤️");
+      
+      // Create a burst of hearts
+      const container = document.getElementById('hearts-container');
+      for (let i = 0; i < 30; i++) {
+        const heart = document.createElement('div');
+        heart.classList.add('heart-shape');
+        heart.style.left = 50 + (Math.random() * 20 - 10) + 'vw';
+        heart.style.top = '80vh';
+        heart.style.animation = 'float 4s linear forwards';
+        heart.style.backgroundColor = `hsl(${Math.random() * 20 + 340}, 100%, 75%)`;
+        container.appendChild(heart);
+        
+        // Remove hearts after animation
+        setTimeout(() => {
+          heart.remove();
+        }, 4000);
+      }
+    });
+
+    // Initialize the page
+    window.addEventListener('DOMContentLoaded', createHearts);
+  </script>
+</body>
+</html>
