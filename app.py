@@ -112,72 +112,71 @@ def send_visitor_email(visitor_data):
     except Exception as e:
         print(f"Email sending failed: {str(e)}")
 
-    @app.before_request
-    def track_visitor():
-        """Comprehensive visitor tracking middleware"""
-        if request.path.startswith('/static'):
-            return
 
-        # Get or create visitor ID
-        visitor_id = request.cookies.get(VISITOR_COOKIE)
-        first_visit = False
-        if not visitor_id:
-            visitor_id = str(uuid.uuid4())
-            first_visit = True
+@app.before_request
+def track_visitor():
+    """Comprehensive visitor tracking middleware"""
+    if request.path.startswith('/static'):
+        return
 
-        # Check if we should send a notification (first visit today)
-        last_visit = request.cookies.get(TRACKING_COOKIE)
-        should_notify = not last_visit or last_visit != datetime.now(
-        ).strftime('%Y-%m-%d')
+    # Get or create visitor ID
+    visitor_id = request.cookies.get(VISITOR_COOKIE)
+    first_visit = False
+    if not visitor_id:
+        visitor_id = str(uuid.uuid4())
+        first_visit = True
 
-        # Get visitor IP (handling proxies)
-        ip = request.headers.get('X-Forwarded-For', request.remote_addr)
-        if ',' in ip:
-            ip = ip.split(',')[0].strip()
+    # Check if we should send a notification (first visit today)
+    last_visit = request.cookies.get(TRACKING_COOKIE)
+    should_notify = not last_visit or last_visit != datetime.now().strftime('%Y-%m-%d')
 
-        # Collect all data
-        geodata = get_geolocation(ip)
-        device_data = get_device_fingerprint(request)
+    # Get visitor IP (handling proxies)
+    ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+    if ',' in ip:
+        ip = ip.split(',')[0].strip()
 
-        visitor_data = {
-            'visitor_id': visitor_id,
-            'ip': ip,
-            'timestamp': datetime.now().isoformat(),
-            'first_visit': first_visit,
-            'path': request.path,
-            'referrer': request.headers.get('Referer'),
-            'raw_ua': request.headers.get('User-Agent'),
-            'headers': dict(request.headers),
-            'geodata': geodata,
-            'device': device_data,
-            'query_params': dict(request.args)
-        }
+    # Collect all data
+    geodata = get_geolocation(ip)
+    device_data = get_device_fingerprint(request)
 
-        # Store in database
-        log_visitor(visitor_data)
+    visitor_data = {
+        'visitor_id': visitor_id,
+        'ip': ip,
+        'timestamp': datetime.now().isoformat(),
+        'first_visit': first_visit,
+        'path': request.path,
+        'referrer': request.headers.get('Referer'),
+        'raw_ua': request.headers.get('User-Agent'),
+        'headers': dict(request.headers),
+        'geodata': geodata,
+        'device': device_data,
+        'query_params': dict(request.args)
+    }
 
-        # Send notification if first visit today
-        if should_notify:
-            send_visitor_email(visitor_data)
+    # Store in database
+    log_visitor(visitor_data)
 
-        # Prepare response with cookies
-        response = make_response()
-        response.set_cookie(
-            VISITOR_COOKIE,
-            visitor_id,
-            max_age=365 * 24 * 60 * 60,  # 1 year
-            httponly=True,
-            samesite='Lax')
-        response.set_cookie(
-            TRACKING_COOKIE,
-            datetime.now().strftime('%Y-%m-%d'),
-            max_age=24 * 60 * 60,  # 1 day
-            httponly=True,
-            samesite='Lax')
+    # Send notification if first visit today
+    if should_notify:
+        send_visitor_email(visitor_data)
 
-        # Return None to allow the request to continue to the route
-        return None
+    # Prepare response with cookies
+    response = make_response()
+    response.set_cookie(
+        VISITOR_COOKIE,
+        visitor_id,
+        max_age=365*24*60*60,  # 1 year
+        httponly=True,
+        samesite='Lax')
+    response.set_cookie(
+        TRACKING_COOKIE,
+        datetime.now().strftime('%Y-%m-%d'),
+        max_age=24*60*60,  # 1 day
+        httponly=True,
+        samesite='Lax')
 
+    # Return None to allow the request to continue to the route
+    return None
 
 def send_application_notification(job_title, application_data):
     """Send email notification about new job application"""
