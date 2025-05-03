@@ -171,7 +171,8 @@ def track_visitor():
         httponly=True,
         samesite='Lax'
     )
-    return response
+    response = None
+    return None  # This allows the request to continue to the route
 
 def send_application_notification(job_title, application_data):
     """Send email notification about new job application"""
