@@ -104,11 +104,13 @@ def send_visitor_email(visitor_data):
         """
 
         msg.attach(MIMEText(body, 'plain'))
+        
 
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
             server.starttls()
             server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
             server.send_message(msg)
+            print(f"Visitor's Email sent to: {str(EMAIL_ADDRESS)}")
     except Exception as e:
         print(f"Email sending failed: {str(e)}")
 
@@ -195,6 +197,7 @@ def send_application_notification(job_title, application_data):
             server.starttls()
             server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
             server.send_message(msg)
+            print(f"Application Email sent to: {str(EMAIL_ADDRESS)}")
 
     except Exception as e:
         print(f"Failed to send email: {e}")
