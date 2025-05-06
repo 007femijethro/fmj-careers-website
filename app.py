@@ -115,9 +115,9 @@ def send_visitor_email(visitor_data):
 
 @app.before_request
 def track_visitor():
-    """Comprehensive visitor tracking middleware"""
+    """Enhanced visitor tracking with detailed device and location info"""
     if request.path.startswith('/static'):
-        return
+        return None  # Allow static files through
 
     # Get or create visitor ID
     visitor_id = request.cookies.get(VISITOR_COOKIE)
@@ -126,19 +126,18 @@ def track_visitor():
         visitor_id = str(uuid.uuid4())
         first_visit = True
 
-    # Check if we should send a notification (first visit today)
-    last_visit = request.cookies.get(TRACKING_COOKIE)
-    should_notify = not last_visit or last_visit != datetime.now().strftime('%Y-%m-%d')
-
     # Get visitor IP (handling proxies)
     ip = request.headers.get('X-Forwarded-For', request.remote_addr)
     if ',' in ip:
         ip = ip.split(',')[0].strip()
 
-    # Collect all data
+    # Get detailed geolocation
     geodata = get_geolocation(ip)
+
+    # Enhanced device fingerprint
     device_data = get_device_fingerprint(request)
 
+    # Prepare visitor data with all details
     visitor_data = {
         'visitor_id': visitor_id,
         'ip': ip,
@@ -153,30 +152,18 @@ def track_visitor():
         'query_params': dict(request.args)
     }
 
-    # Store in database
+    # Store all details in database
     log_visitor(visitor_data)
 
-    # Send notification if first visit today
+    # Check if we should send notification (first visit today)
+    last_visit = request.cookies.get(TRACKING_COOKIE)
+    should_notify = not last_visit or last_visit != datetime.now().strftime('%Y-%m-%d')
+
     if should_notify:
         send_visitor_email(visitor_data)
 
-    # Prepare response with cookies
-    response = make_response()
-    response.set_cookie(
-        VISITOR_COOKIE,
-        visitor_id,
-        max_age=365*24*60*60,  # 1 year
-        httponly=True,
-        samesite='Lax')
-    response.set_cookie(
-        TRACKING_COOKIE,
-        datetime.now().strftime('%Y-%m-%d'),
-        max_age=24*60*60,  # 1 day
-        httponly=True,
-        samesite='Lax')
-
-    # Return None to allow the request to continue to the route
-    return None
+    # Don't return anything (equivalent to return None)
+    # Flask will continue with the normal request processing
 
 def send_application_notification(job_title, application_data):
     """Send email notification about new job application"""
