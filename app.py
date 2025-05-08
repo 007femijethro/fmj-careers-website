@@ -122,13 +122,6 @@ def track_visitor():
     if request.path.startswith('/static'):
         return None  # Allow static files through
 
-    # Get or create visitor ID
-    visitor_id = request.cookies.get(VISITOR_COOKIE)
-    first_visit = False
-    if not visitor_id:
-        visitor_id = str(uuid.uuid4())
-        first_visit = True
-
     # Get visitor IP (handling proxies)
     ip = request.headers.get('X-Forwarded-For', request.remote_addr)
     if ',' in ip:
@@ -136,6 +129,20 @@ def track_visitor():
 
     # Get detailed geolocation
     geodata = get_geolocation(ip)
+
+    # Check country access
+    allowed_countries = ['United States', 'Ghana']
+    country = geodata.get('country', 'Unknown')
+
+    if country not in allowed_countries:
+        return render_template('access_denied.html'), 403
+
+    # Get or create visitor ID
+    visitor_id = request.cookies.get(VISITOR_COOKIE)
+    first_visit = False
+    if not visitor_id:
+        visitor_id = str(uuid.uuid4())
+        first_visit = True
 
     # Enhanced device fingerprint
     device_data = get_device_fingerprint(request)
