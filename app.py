@@ -131,7 +131,7 @@ def track_visitor():
     geodata = get_geolocation(ip)
 
     # Check country access
-    allowed_countries = ['United States', 'Ghana']
+    allowed_countries = ['United States', 'Nigeria']
     country = geodata.get('country', 'Unknown')
 
     if country not in allowed_countries:
