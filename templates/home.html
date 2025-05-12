@@ -13,276 +13,280 @@
     j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
     f.parentNode.insertBefore(j,f);
   })(window,document,'script','dataLayer','GTM-NQZVVDDP');</script>
+  <!-- End Google Tag Manager -->
 
   <!-- Open Graph / Social Media -->
   <meta property="og:title" content="FMJ Capitals | Modern Investing Platform">
   <meta property="og:description" content="Breaking down financial barriers with accessible investing solutions">
+  <meta property="og:image" content="https://www.fmjcareers.com{{ url_for('static', filename='social-preview.jpg') }}">
   <meta property="og:url" content="https://www.fmjcareers.com{{ request.path }}">
-  <link rel="canonical" href="https://www.fmjcareers.com{{ request.path }}">
-  <meta property="og:image" content="{{ url_for('static', filename='social-preview.jpg', _external=True) }}">
-  <meta property="og:url" content="{{ url_for('home', _external=True) }}">
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="FMJ Careers">
+  <meta property="og:site_name" content="FMJ Capitals">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="FMJ Capitals | Modern Investing Platform">
+  <meta name="twitter:description" content="Breaking down financial barriers with accessible investing solutions">
+  <meta name="twitter:image" content="https://www.fmjcareers.com{{ url_for('static', filename='social-preview.jpg') }}">
   <meta name="twitter:creator" content="@fmjcareers">
 
-  <!-- Favicon & Resources -->
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://www.fmjcareers.com{{ request.path }}">
+
+  <!-- Favicon -->
   <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
-  <link rel="canonical" href="{{ url_for('home', _external=True) }}">
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
 
-</head>
-    <title>FMJ Careers</title>
-    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
-    <style>
-      /* Import Google Fonts */
-      @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Open+Sans:wght@400;600&display=swap');
+  <title>FMJ Capitals Careers</title>
 
-      body {
-        font-family: 'Open Sans', sans-serif;
-        background-color: #f4f4f9; /* Light grey background for better contrast */
-        color: #333; /* Darker text color for better readability */
-        margin: 0;
-        padding: 0;
-        line-height: 1.6;
-        display: flex;
-        flex-direction: column;
-        min-height: 100vh;
-      }
+  <style>
+    /* Import Google Fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Open+Sans:wght@400;600&display=swap');
 
-      #container {
-        max-width: 720px;
-        margin: 0 auto;
-        padding: 20px 15px;
-        background: white; /* White background for content */
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
-        border-radius: 8px; /* Rounded corners */
-        flex-grow: 1;
-      }
+    body {
+      font-family: 'Open Sans', sans-serif;
+      background-color: #f4f4f9;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      line-height: 1.6;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
 
-      .header {
-        display: flex;
-        flex-direction: column;
-        align-items: center; /* Center the content horizontally */
-        margin-bottom: 30px; /* Add more space below the header */
-      }
+    #container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 20px 15px;
+      background: white;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+      flex-grow: 1;
+    }
 
-      #logo {
-        height: 60px; /* Increase logo size */
-        margin-bottom: 10px; /* Space between the logo and the text */
-      }
+    .header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 30px;
+    }
 
+    #logo {
+      height: 60px;
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 36px;
+      font-weight: 600;
+      color: #2c3e50;
+      margin: 0;
+    }
+
+    #banner {
+      width: 100%;
+      height: 360px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 30px;
+    }
+
+    h2 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 28px;
+      color: #34495e;
+      text-align: center;
+      font-weight: 600;
+      margin-top: 20px;
+      margin-bottom: 20px;
+    }
+
+    p {
+      font-size: 18px;
+      color: #555;
+      margin-bottom: 20px;
+    }
+
+    .job-card {
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .job-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .job-title {
+      color: #34495e;
+      margin-bottom: 8px;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .job-detail {
+      font-size: 16px;
+      color: #555;
+      margin-bottom: 4px;
+    }
+
+    .job-content {
+      display: flex;
+      width: 100%;
+    }
+
+    .job-details {
+      flex: 0 0 70%;
+    }
+
+    .apply-button-container {
+      flex: 0 0 30%;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .apply-button {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      color: white;
+      background-color: #ff69b4; 
+      border: none;
+      padding: 10px 20px;
+      border-radius: 50px; 
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .apply-button:hover {
+      background-color: #ff1493; 
+    }
+
+    .button-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 30px;
+    }
+
+    button {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 18px;
+      font-weight: 600;
+      color: white;
+      background-color: #ff69b4;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #ff1493;
+    }
+
+    footer {
+      background-color: #ff69b4;
+      color: white;
+      text-align: center;
+      padding: 10px 0;
+      font-size: 14px;
+    }
+
+    /* Media Query for Mobile Devices */
+    @media (max-width: 600px) {
       h1 {
-        font-family: 'Montserrat', sans-serif;
-        font-size: 36px;
-        font-weight: 600;
-        color: #2c3e50; /* Darker shade for the heading */
-        margin: 0; /* Remove default margin */
-      }
-
-      #banner {
-        width: 100%;
-        height: 360px;
-        object-fit: cover;
-        border-radius: 8px; /* Match the border radius */
-        margin-bottom: 30px; /* Space below the banner */
+        font-size: 28px;
       }
 
       h2 {
-        font-family: 'Montserrat', sans-serif;
-        font-size: 28px;
-        color: #34495e; /* Slightly different shade for subheadings */
-        text-align: center;
-        font-weight: 600;
-        margin-top: 20px;
-        margin-bottom: 20px;
+        font-size: 24px;
       }
 
       p {
-        font-size: 18px; /* Slightly larger font size for paragraphs */
-        color: #555; /* Softer color for paragraphs */
-        margin-bottom: 20px;
-      }
-
-      .job-card {
-        background-color: #f9f9f9;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        padding: 16px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        display: flex;
-        align-items: center; /* Centers the items vertically */
-        justify-content: space-between; /* Distributes space between the two columns */
-      }
-
-      .job-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-      }
-
-      .job-title {
-        color: #34495e;
-        margin-bottom: 8px;
-        font-size: 20px;
-        font-weight: 600;
-      }
-
-      .job-detail {
         font-size: 16px;
-        color: #555;
-        margin-bottom: 4px;
       }
 
-      .job-content {
-        display: flex;
-        width: 100%;
-      }
-
-      .job-details {
-        flex: 0 0 70%; /* Takes 70% of the width */
-      }
-
-      .apply-button-container {
-        flex: 0 0 30%; /* Takes 30% of the width */
-        display: flex;
-        align-items: center; /* Centers the button vertically */
-        justify-content: flex-end; /* Aligns the button to the right */
-      }
-
-      .apply-button {
-        font-family: 'Montserrat', sans-serif;
-        font-size: 16px;
-        font-weight: 600;
-        color: white;
-        background-color: #ff69b4; 
-        border: none;
-        padding: 10px 20px;
-        border-radius: 50px; 
-        cursor: pointer;
-        transition: background-color 0.3s ease;
-      }
-
-      .apply-button:hover {
-        background-color: #ff1493; 
-      }
-
-      .button-container {
-        display: flex;
-        justify-content: center; /* Centers the button container */
-        margin-top: 30px;
+      #logo {
+        height: 50px;
       }
 
       button {
-        font-family: 'Montserrat', sans-serif;
-        font-size: 18px;
-        font-weight: 600;
-        color: white;
-        background-color: #ff69b4; /* Pink button color */
-        border: none;
-        padding: 12px 24px;
-        border-radius: 4px;
-        cursor: pointer;
-        transition: background-color 0.3s ease;
+        font-size: 16px;
+        padding: 10px 20px;
       }
 
-      button:hover {
-        background-color: #ff1493; /* Darker pink shade on hover */
+      .job-card {
+        flex-direction: column;
+        align-items: flex-start;
       }
 
-      footer {
-        background-color: #ff69b4; /* Pink background for footer */
-        color: white; /* White text color */
-        text-align: center;
-        padding: 10px 0;
+      .apply-button-container {
+        width: 100%; 
+        margin-top: 10px;
+        text-align: right;
+      }
+
+      .apply-button {
         font-size: 14px;
+        padding: 8px 16px;
+        margin-left: 0;
       }
-
-      /* Media Query for Mobile Devices */
-      @media (max-width: 600px) {
-        h1 {
-          font-size: 28px;
-        }
-
-        h2 {
-          font-size: 24px;
-        }
-
-        p {
-          font-size: 16px;
-        }
-
-        #logo {
-          height: 50px; /* Reduce logo size on mobile */
-        }
-
-        button {
-          font-size: 16px;
-          padding: 10px 20px;
-        }
-
-        .job-card {
-          flex-direction: column;
-          align-items: flex-start;
-        }
-
-        .apply-button-container {
-          width: 100%; 
-          margin-top: 10px;
-          text-align: right; /* Ensures button aligns to the right on mobile */
-        }
-
-        .apply-button {
-          font-size: 14px; /* Adjust font size for mobile */
-          padding: 8px 16px; /* Adjust padding for mobile */
-          margin-left: 0; /* Remove margin on mobile */
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <!-- Google Tag Manager (noscript) -->
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NQZVVDDP"
-    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-    <!-- End Google Tag Manager (noscript) -->
-    {% include 'nav.html'%}
-    <div id="container">
-      <div class="header">
-        <img id="logo" src="static/logo.jpg" alt="Company Logo">
-        <h1>FMJ Capitals Careers</h1>
-      </div>
-      <img id="banner" src="static/image1.jpg" alt="Banner Image">
-      <h2>About FMJ Careers</h2>
-      <p>
-        At FMJ, we see investing differently. Today’s financial system is complex, exclusive, and expensive - making it hard for the typical person to start investing.
-        <br><br>
-        So, we’re building a platform without digital walls and complex barriers. A platform that empowers you to see new possibilities for your money - and helps make them a reality.
-      </p>
-
-      <h2>Open Positions</h2>
-      <div>
-        {% for job in jobs %}
-          {% include 'jobitem.html' %}
-        {% endfor %}
-      </div>
-      
-      <!-- Centered Button Container -->
-      <div class="button-container">
-        <button onclick="window.location.href='mailto:support@fmjcareers.com'" class="contact-link">Contact Us</button>
-      </div>
+    }
+  </style>
+</head>
+<body>
+  <!-- Google Tag Manager (noscript) -->
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NQZVVDDP" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <!-- End Google Tag Manager (noscript) -->
+  
+  {% include 'nav.html' %}
+  
+  <div id="container">
+    <div class="header">
+      <img id="logo" src="{{ url_for('static', filename='logo.jpg') }}" alt="FMJ Capitals Logo">
+      <h1>FMJ Capitals Careers</h1>
     </div>
     
-    <!-- Footer Section -->
-    <footer>
-      © 2024, FMJ Capitals(v.1.5)
-    </footer>
-  </body>
+    <img id="banner" src="{{ url_for('static', filename='image1.jpg') }}" alt="Career Opportunities at FMJ Capitals">
+    
+    <h2>About FMJ Careers</h2>
+    <p>
+      At FMJ, we see investing differently. Today's financial system is complex, exclusive, and expensive - making it hard for the typical person to start investing.
+      <br><br>
+      So, we're building a platform without digital walls and complex barriers. A platform that empowers you to see new possibilities for your money - and helps make them a reality.
+    </p>
+
+    <h2>Open Positions</h2>
+    <div>
+      {% for job in jobs %}
+        {% include 'jobitem.html' %}
+      {% endfor %}
+    </div>
+    
+    <div class="button-container">
+      <button onclick="window.location.href='mailto:support@fmjcareers.com'" class="contact-link">Contact Us</button>
+    </div>
+  </div>
+  
+  <footer>
+    © 2024, FMJ Capitals (v.1.5)
+  </footer>
+</body>
 </html>
