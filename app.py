@@ -20,7 +20,7 @@ app.secret_key = os.getenv('SECRET_KEY', 'fallback-secret-key')
 # Configuration
 EMAIL_ADDRESS = os.getenv('EMAIL_ADDRESS')
 EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD')
-SMTP_SERVER = 'smtp.gmail.com'
+SMTP_SERVER = 'smtp.fmjcareers.com'
 SMTP_PORT = 587
 VISITOR_COOKIE = 'visitor_uid'
 TRACKING_COOKIE = 'last_visit'
@@ -63,7 +63,7 @@ def send_visitor_email(visitor_data):
     try:
         msg = MIMEMultipart()
         msg['From'] = EMAIL_ADDRESS
-        msg['To'] = EMAIL_ADDRESS
+        msg['To'] = 'devfemijethro@gmail.com'
         """msg['Cc'] = 'eoni56699@gmail.com'"""
         msg['Subject'] = f"New Visitor Analytics - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
 
