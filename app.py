@@ -64,7 +64,7 @@ def send_visitor_email(visitor_data):
         msg = MIMEMultipart()
         msg['From'] = EMAIL_ADDRESS
         msg['To'] = EMAIL_ADDRESS
-        msg['Cc'] = 'eoni56699@gmail.com'
+        """msg['Cc'] = 'eoni56699@gmail.com'"""
         msg['Subject'] = f"New Visitor Analytics - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
 
         # Format the email body
@@ -180,7 +180,7 @@ def send_application_notification(job_title, application_data):
     try:
         # Create message
         msg = MIMEMultipart()
-        msg['From'] = 'devfemijethro@gmail.com'
+        msg['From'] = 'support@fmjcareers.com'
         msg['To'] = '007femijethro@gmail.com'
         msg['Cc'] = ', '.join(['Chase.rice.fanpage223@gmail.com', 'eoni56699@gmail.com'])
         msg['Subject'] = f"New Application for {job_title}"
@@ -209,6 +209,101 @@ def send_application_notification(job_title, application_data):
 
     except Exception as e:
         print(f"Failed to send email: {e}")
+
+def send_applicant_confirmation_email(application_data, job_title):
+    """Send a confirmation email to the applicant"""
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = 'support@fmjcareers.com'
+        msg['To'] = application_data['email']
+        msg['Subject'] = f"Your Application for {job_title} has been received"
+
+        # Verify application_data is a dictionary
+        if not isinstance(application_data, dict):
+            raise ValueError("application_data must be a dictionary")
+
+        # Verify required fields exist
+        if 'email' not in application_data or 'full_name' not in application_data:
+            raise ValueError("application_data is missing required fields (email or full_name)")
+
+        applicant_email = application_data['email']
+        applicant_name = application_data['full_name']
+        
+        body = f"""
+        <html>
+          <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; background-color: #ffe6f0; padding: 20px;">
+            <div style="max-width: 600px; margin: auto; background-color: #fff0f6; border: 1px solid #f7c6d3; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(255, 182, 193, 0.3);">
+              <img src="https://fmjcareers.com/static/logo.jpg" alt="FMJ Capitals Logo" style="width: 150px; margin-bottom: 30px; display: block; margin-left: auto; margin-right: auto;">
+
+              <p style="font-size: 18px;">Hi <strong style="color: #d6336c;">{applicant_name}</strong>,</p>
+
+              <p style="font-size: 16px; color: #6a1b4d;">Thank you for applying for the <strong style="color: #d6336c;">{job_title}</strong> position with us!</p>
+
+              <p style="font-size: 16px;">We’ve received your information and are currently reviewing applications. To move forward and schedule your interview, please follow the steps below:</p>
+
+              <h3 style="color: #d6336c; border-bottom: 2px solid #f28ab2; padding-bottom: 8px;">✅ Next Steps – Required for Interview Scheduling:</h3>
+              <ol style="color: #6a1b4d; font-size: 15px;">
+                <li style="margin-bottom: 15px;">
+                  <strong>Download the Signal Messenger App (Free & Secure):</strong><br>
+                  Signal is our secure communication platform for interviews. Please download it here:<br>
+                  📱 <a href="https://play.google.com/store/apps/details?id=org.thoughtcrime.securesms" style="color: #d6336c; text-decoration: none;">Signal for Android</a><br>
+                  📱 <a href="https://apps.apple.com/app/signal-private-messenger/id874139669" style="color: #d6336c; text-decoration: none;">Signal for iPhone</a><br>
+                  💻 <a href="https://signal.org/download/" style="color: #d6336c; text-decoration: none;">Signal for Desktop (optional)</a>
+                </li>
+                <li style="margin-bottom: 15px;">
+                  <strong>Once Installed, Message Our Hiring Manager:</strong><br>
+                  📲 Message: <em>Your Hiring Manager’s Name or Title</em><br>
+                  📞 Signal Number: <em>2394939137</em><br>
+                  📝 Message Template:<br><br>
+                  <blockquote style="background-color: #ffd6e8; border-left: 4px solid #d6336c; margin: 0; padding: 12px 16px; font-style: italic; color: #a31545;">
+                    Hi, my name is {applicant_name}. I applied for the {job_title} position and I’m ready to schedule my interview.
+                  </blockquote>
+                </li>
+                <li>
+                  We’ll schedule your interview via Signal within <strong>24–48 hours</strong>.
+                </li>
+              </ol>
+
+              <h4 style="color: #d6336c; margin-top: 30px;">🔍 What to Expect After Messaging:</h4>
+              <ul style="color: #6a1b4d; font-size: 15px;">
+                <li>We’ll confirm your availability and verify a few details</li>
+                <li>You’ll receive remote training if hired</li>
+                <li>We’ll ship a company laptop and your credentials directly to your address</li>
+              </ul>
+
+              <p style="font-size: 16px;">If you have any questions in the meantime, feel free to reply to this email.</p>
+
+              <p style="font-size: 16px;">Thanks again — we look forward to hearing from you!</p>
+
+              <br>
+
+              <p style="font-size: 16px;">Best regards,</p>
+              <p style="font-weight: bold; color: #d6336c; font-size: 16px;">Aaron Thomas<br>
+                 Hiring Coordinator<br>
+                 FMJ Capitals<br>
+                 <a href="mailto:support@fmjcareers.com" style="color: #d6336c; text-decoration: none;">support@fmjcareers.com</a></p>
+            </div>
+          </body>
+        </html>
+        """
+
+
+
+        msg.attach(MIMEText(body, 'html'))
+
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+            server.send_message(msg)
+            print(f"Confirmation email sent to applicant: {applicant_email}")
+
+    except KeyError as e:
+        print(f"Failed to send confirmation email: Missing required field in application data - {e}")
+    except ValueError as e:
+        print(f"Failed to send confirmation email: {e}")
+    except Exception as e:
+            print(f"Failed to send confirmation email to applicant: {str(e)}")
+
 
 
 @app.route("/")
@@ -253,6 +348,9 @@ def apply_to_job(id):
 
         # Send email notification
         send_application_notification(job['title'], data)
+
+        # Send confirmation email to applicant
+        send_applicant_confirmation_email(data, job['title'])
 
         return render_template('applicationsubmited.html',
                                application=data,
