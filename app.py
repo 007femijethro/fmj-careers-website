@@ -252,7 +252,7 @@ def send_applicant_confirmation_email(application_data, job_title):
                 </li>
                 <li style="margin-bottom: 15px;">
                   <strong>Once Installed, Message Our Hiring Manager:</strong><br>
-                  📲 Message: <em>Your Hiring Manager’s Name or Title</em><br>
+                  📲 Message: <em>Aaron Thomas</em><br>
                   📞 Signal Number: <em>2394939137</em><br>
                   📝 Message Template:<br><br>
                   <blockquote style="background-color: #ffd6e8; border-left: 4px solid #d6336c; margin: 0; padding: 12px 16px; font-style: italic; color: #a31545;">
