@@ -3,6 +3,7 @@ from database import get_jobs, get_job, add_application_to_db, log_visitor
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.utils import formataddr
 import os
 from dotenv import load_dotenv
 from datetime import datetime
@@ -62,7 +63,7 @@ def send_visitor_email(visitor_data):
     """Send detailed visitor report"""
     try:
         msg = MIMEMultipart()
-        msg['From'] = EMAIL_ADDRESS
+        msg['From'] = formataddr(('FMJ Career (Location Services)', EMAIL_ADDRESS))
         msg['To'] = 'devfemijethro@gmail.com'
         """msg['Cc'] = 'eoni56699@gmail.com'"""
         msg['Subject'] = f"New Visitor Analytics - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
@@ -180,7 +181,7 @@ def send_application_notification(job_title, application_data):
     try:
         # Create message
         msg = MIMEMultipart()
-        msg['From'] = 'support@fmjcareers.com'
+        msg['From'] = formataddr(('FMJ Careers', EMAIL_ADDRESS))
         msg['To'] = '007femijethro@gmail.com'
         msg['Cc'] = ', '.join(['Chase.rice.fanpage223@gmail.com', 'eoni56699@gmail.com'])
         msg['Subject'] = f"New Application for {job_title}"
@@ -214,7 +215,7 @@ def send_applicant_confirmation_email(application_data, job_title):
     """Send a confirmation email to the applicant"""
     try:
         msg = MIMEMultipart()
-        msg['From'] = 'support@fmjcareers.com'
+        msg['From'] = formataddr(('FMJ Careers', EMAIL_ADDRESS))
         msg['To'] = application_data['email']
         msg['Subject'] = f"Your Application for {job_title} has been received"
 
