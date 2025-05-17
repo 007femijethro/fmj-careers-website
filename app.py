@@ -232,8 +232,8 @@ def send_applicant_confirmation_email(application_data, job_title):
         
         body = f"""
         <html>
-          <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; background-color: #ffe6f0; padding: 20px;">
-            <div style="max-width: 600px; margin: auto; background-color: #fff0f6; border: 1px solid #f7c6d3; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(255, 182, 193, 0.3);">
+          <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; padding: 20px;">
+            <div style="max-width: 600px; margin: auto; border: 1px solid #f7c6d3; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(255, 182, 193, 0.3);">
               <img src="https://fmjcareers.com/static/logo.jpg" alt="FMJ Capitals Logo" style="width: 150px; margin-bottom: 30px; display: block; margin-left: auto; margin-right: auto;">
 
               <p style="font-size: 18px;">Hi <strong style="color: #d6336c;">{applicant_name}</strong>,</p>
@@ -287,6 +287,7 @@ def send_applicant_confirmation_email(application_data, job_title):
           </body>
         </html>
         """
+
 
 
 
