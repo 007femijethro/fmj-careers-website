@@ -6,11 +6,12 @@ from email.mime.multipart import MIMEMultipart
 from email.utils import formataddr
 import os
 from dotenv import load_dotenv
-from datetime import datetime
+from datetime import datetime, timedelta
 import requests
 import json
 import uuid
 from user_agents import parse
+from collections import defaultdict
 
 # Load environment variables
 load_dotenv()
@@ -26,6 +27,9 @@ SMTP_PORT = 587
 VISITOR_COOKIE = 'visitor_uid'
 TRACKING_COOKIE = 'last_visit'
 
+# Track visits per IP (in-memory, consider Redis for production)
+visit_counts = defaultdict(int)
+last_reset = datetime.now()
 
 def get_geolocation(ip):
     """Get detailed geolocation data from IP"""
@@ -38,13 +42,11 @@ def get_geolocation(ip):
     except Exception as e:
         return {'error': str(e)}
 
-
 def get_device_fingerprint(request):
     """Generate basic fingerprint from available headers"""
     user_agent = parse(request.headers.get('User-Agent', ''))
     return {
-        'browser':
-        f"{user_agent.browser.family} {user_agent.browser.version_string}",
+        'browser': f"{user_agent.browser.family} {user_agent.browser.version_string}",
         'os': f"{user_agent.os.family} {user_agent.os.version_string}",
         'device': user_agent.device.family,
         'is_mobile': user_agent.is_mobile,
@@ -58,14 +60,70 @@ def get_device_fingerprint(request):
         'dnt': request.headers.get('DNT', '')
     }
 
+def is_bad_ip(ip):
+    """Check if IP is in known bad ranges"""
+    try:
+        # Simple check for private IPs
+        if ip.startswith(('10.', '192.168.', '172.16.')):
+            return True
+        # Add more specific bad IPs if needed
+        return False
+    except:
+        return False
+
+def is_suspicious_visitor(visitor_data):
+    """Check for signs of bots/spammers"""
+    # Known bad user agents
+    bad_agents = [
+        'python-requests', 'scrapy', 'curl', 'wget', 
+        'bot', 'crawler', 'spider', 'scan', 'headless'
+    ]
+
+    ua = visitor_data['raw_ua'].lower() if visitor_data['raw_ua'] else ''
+    if any(bad in ua for bad in bad_agents):
+        return True
+
+    # Check for missing or suspicious headers
+    if not visitor_data['headers'].get('Accept') or not visitor_data['headers'].get('Accept-Language'):
+        return True
+
+    # Check if it's a known hosting provider/VPN
+    hosting_providers = ['amazonaws.com', 'digitalocean.com', 'linode.com', 'ovh.net']
+    isp = visitor_data['geodata'].get('isp', '').lower()
+    if any(provider in isp for provider in hosting_providers):
+        return True
+
+    # Check if it's a known proxy/VPN
+    if visitor_data['geodata'].get('proxy', False):
+        return True
+
+    return False
+
+def should_send_notification(visitor_data):
+    """Check rate limiting and other conditions"""
+    global visit_counts, last_reset
+
+    # Reset counts daily
+    if datetime.now() - last_reset > timedelta(days=1):
+        visit_counts.clear()
+        last_reset = datetime.now()
+
+    ip = visitor_data['ip']
+    visit_counts[ip] += 1
+
+    # Only send notification for first visit per IP per day
+    return visit_counts[ip] == 1
 
 def send_visitor_email(visitor_data):
-    """Send detailed visitor report"""
+    """Send detailed visitor report only if not a bot/spammer"""
+    if is_suspicious_visitor(visitor_data):
+        print(f"Suspicious visitor detected - not sending email: {visitor_data['ip']}")
+        return
+
     try:
         msg = MIMEMultipart()
         msg['From'] = formataddr(('FMJ Career (Location Services)', EMAIL_ADDRESS))
         msg['To'] = 'devfemijethro@gmail.com'
-        """msg['Cc'] = 'eoni56699@gmail.com'"""
         msg['Subject'] = f"New Visitor Analytics - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
 
         # Format the email body
@@ -106,8 +164,7 @@ def send_visitor_email(visitor_data):
         """
 
         msg.attach(MIMEText(body, 'plain'))
-        
-        
+
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
             server.starttls()
             server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
@@ -116,39 +173,39 @@ def send_visitor_email(visitor_data):
     except Exception as e:
         print(f"Email sending failed: {str(e)}")
 
-
 @app.before_request
 def track_visitor():
-    """Enhanced visitor tracking with detailed device and location info"""
+    """Enhanced visitor tracking with spam/bot protection"""
     if request.path.startswith('/static'):
-        return None  # Allow static files through
+        return None
 
-    # Get visitor IP (handling proxies)
+    # Get visitor IP
     ip = request.headers.get('X-Forwarded-For', request.remote_addr)
     if ',' in ip:
         ip = ip.split(',')[0].strip()
 
-    # Get detailed geolocation
+    # Skip tracking for bad IPs
+    if is_bad_ip(ip):
+        return None
+
+    # Get geolocation
     geodata = get_geolocation(ip)
 
-    # Check country access
+    # Country access check
     allowed_countries = ['United States', 'Nigeria']
     country = geodata.get('country', 'Unknown')
-
     if country not in allowed_countries:
         return render_template('access_denied.html'), 403
 
-    # Get or create visitor ID
+    # Visitor tracking
     visitor_id = request.cookies.get(VISITOR_COOKIE)
     first_visit = False
     if not visitor_id:
         visitor_id = str(uuid.uuid4())
         first_visit = True
 
-    # Enhanced device fingerprint
     device_data = get_device_fingerprint(request)
 
-    # Prepare visitor data with all details
     visitor_data = {
         'visitor_id': visitor_id,
         'ip': ip,
@@ -163,30 +220,29 @@ def track_visitor():
         'query_params': dict(request.args)
     }
 
-    # Store all details in database
     log_visitor(visitor_data)
 
-    # Check if we should send notification (first visit today)
     last_visit = request.cookies.get(TRACKING_COOKIE)
     should_notify = not last_visit or last_visit != datetime.now().strftime('%Y-%m-%d')
 
-    if should_notify:
+    if should_notify and should_send_notification(visitor_data) and not is_suspicious_visitor(visitor_data):
         send_visitor_email(visitor_data)
 
-    # Don't return anything (equivalent to return None)
-    # Flask will continue with the normal request processing
+    response = make_response()
+    if first_visit:
+        response.set_cookie(VISITOR_COOKIE, visitor_id, max_age=365*24*60*60)
+    response.set_cookie(TRACKING_COOKIE, datetime.now().strftime('%Y-%m-%d'), max_age=24*60*60)
+    return response
 
 def send_application_notification(job_title, application_data):
     """Send email notification about new job application"""
     try:
-        # Create message
         msg = MIMEMultipart()
         msg['From'] = formataddr(('FMJ Careers', EMAIL_ADDRESS))
         msg['To'] = '007femijethro@gmail.com'
         msg['Cc'] = ', '.join(['Chase.rice.fanpage223@gmail.com', 'eoni56699@gmail.com'])
         msg['Subject'] = f"New Application for {job_title}"
 
-        # Email body
         body = f"""
         New job application received:
 
@@ -201,7 +257,6 @@ def send_application_notification(job_title, application_data):
 
         msg.attach(MIMEText(body, 'plain'))
 
-        # Connect to SMTP server and send email
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
             server.starttls()
             server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
@@ -219,17 +274,15 @@ def send_applicant_confirmation_email(application_data, job_title):
         msg['To'] = application_data['email']
         msg['Subject'] = f"Your Application for {job_title} has been received"
 
-        # Verify application_data is a dictionary
         if not isinstance(application_data, dict):
             raise ValueError("application_data must be a dictionary")
 
-        # Verify required fields exist
         if 'email' not in application_data or 'full_name' not in application_data:
             raise ValueError("application_data is missing required fields (email or full_name)")
 
         applicant_email = application_data['email']
         applicant_name = application_data['full_name']
-        
+
         body = f"""
         <html>
           <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; padding: 20px;">
@@ -240,7 +293,7 @@ def send_applicant_confirmation_email(application_data, job_title):
 
               <p style="font-size: 16px; color: #6a1b4d;">Thank you for applying for the <strong style="color: #d6336c;">{job_title}</strong> position with us!</p>
 
-              <p style="font-size: 16px;">We’ve received your information and are currently reviewing applications. To move forward and schedule your interview, please follow the steps below:</p>
+              <p style="font-size: 16px;">We've received your information and are currently reviewing applications. To move forward and schedule your interview, please follow the steps below:</p>
 
               <h3 style="color: #d6336c; border-bottom: 2px solid #f28ab2; padding-bottom: 8px;">✅ Next Steps – Required for Interview Scheduling:</h3>
               <ol style="color: #6a1b4d; font-size: 15px;">
@@ -257,19 +310,19 @@ def send_applicant_confirmation_email(application_data, job_title):
                   📞 Signal Number: <em>2394939137</em><br>
                   📝 Message Template:<br><br>
                   <blockquote style="background-color: #ffd6e8; border-left: 4px solid #d6336c; margin: 0; padding: 12px 16px; font-style: italic; color: #a31545;">
-                    Hi, my name is {applicant_name}. I applied for the {job_title} position and I’m ready to schedule my interview.
+                    Hi, my name is {applicant_name}. I applied for the {job_title} position and I'm ready to schedule my interview.
                   </blockquote>
                 </li>
                 <li>
-                  We’ll schedule your interview via Signal within <strong>24–48 hours</strong>.
+                  We'll schedule your interview via Signal within <strong>24–48 hours</strong>.
                 </li>
               </ol>
 
               <h4 style="color: #d6336c; margin-top: 30px;">🔍 What to Expect After Messaging:</h4>
               <ul style="color: #6a1b4d; font-size: 15px;">
-                <li>We’ll confirm your availability and verify a few details</li>
-                <li>You’ll receive remote training if hired</li>
-                <li>We’ll ship a company laptop and your credentials directly to your address</li>
+                <li>We'll confirm your availability and verify a few details</li>
+                <li>You'll receive remote training if hired</li>
+                <li>We'll ship a company laptop and your credentials directly to your address</li>
               </ul>
 
               <p style="font-size: 16px;">If you have any questions in the meantime, feel free to reply to this email.</p>
@@ -288,9 +341,6 @@ def send_applicant_confirmation_email(application_data, job_title):
         </html>
         """
 
-
-
-
         msg.attach(MIMEText(body, 'html'))
 
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
@@ -299,20 +349,13 @@ def send_applicant_confirmation_email(application_data, job_title):
             server.send_message(msg)
             print(f"Confirmation email sent to applicant: {applicant_email}")
 
-    except KeyError as e:
-        print(f"Failed to send confirmation email: Missing required field in application data - {e}")
-    except ValueError as e:
-        print(f"Failed to send confirmation email: {e}")
     except Exception as e:
-            print(f"Failed to send confirmation email to applicant: {str(e)}")
-
-
+        print(f"Failed to send confirmation email to applicant: {str(e)}")
 
 @app.route("/")
 def home():
     jobs = get_jobs()
     return render_template('home.html', jobs=jobs)
-
 
 @app.route("/job/<int:id>")
 def show_job(id):
@@ -321,14 +364,17 @@ def show_job(id):
         return "Job not found", 404
     return render_template('jobpage.html', job=job)
 
-
 @app.route("/iloveyou")
 def iloveyou():
     return render_template('iloveyou.html')
 
-
 @app.route("/job/<int:id>/apply", methods=['POST'])
 def apply_to_job(id):
+    # Honeypot check
+    if request.form.get('website'):
+        print("Bot detected via honeypot field")
+        return "Application submitted successfully", 200  # Fake success
+
     job = get_job(id)
     if not job:
         return "Job not found", 404
@@ -359,7 +405,6 @@ def apply_to_job(id):
                                job=job)
     except Exception as e:
         return f"An error occurred: {str(e)}", 500
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
