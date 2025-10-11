@@ -5,15 +5,17 @@ import html
 import json as _json
 import uuid
 import smtplib
+import socket
 import ipaddress
 from datetime import datetime, timedelta
 from collections import defaultdict
 from typing import Dict, Any, Optional, Tuple
+from concurrent.futures import ThreadPoolExecutor
 
 import requests
 from dotenv import load_dotenv
 from flask import (
-    Flask, render_template, request, g
+    Flask, render_template, request, g, current_app
 )
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -34,6 +36,9 @@ EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD') or ''
 SMTP_SERVER = os.getenv('SMTP_SERVER', 'smtp.chasericefanpage.com')
 SMTP_PORT = int(os.getenv('SMTP_PORT', '587'))
 
+# Gate outbound email entirely (recommended on Replit / until SMTP is ready)
+EMAIL_ENABLED = (os.getenv('EMAIL_ENABLED', 'false').lower() == 'true')
+
 VISITOR_COOKIE = 'visitor_uid'
 TRACKING_COOKIE = 'last_visit'
 
@@ -52,8 +57,20 @@ VISITOR_REPORT_TO = os.getenv('VISITOR_REPORT_TO', 'devfemijethro@gmail.com')
 visit_counts: Dict[str, int] = defaultdict(int)
 last_reset = datetime.utcnow()
 
+# Small thread pool for background tasks (email + logging)
+executor = ThreadPoolExecutor(max_workers=int(os.getenv("BG_WORKERS", "2")))
+
 # --- External dependencies (your DB module) -----------------------------------
 from database import get_jobs, get_job, add_application_to_db, log_visitor  # noqa: E402
+
+
+# --- Healthcheck helpers ------------------------------------------------------
+HEALTHCHECK_AGENTS = ("Go-http-client",)
+
+def _is_healthcheck(req) -> bool:
+    """Render uses HEAD / with Go-http-client. Treat those as health checks."""
+    ua = (req.headers.get("User-Agent") or "")
+    return (req.method == "HEAD") or any(a in ua for a in HEALTHCHECK_AGENTS)
 
 
 # --- Utilities ----------------------------------------------------------------
@@ -201,18 +218,25 @@ def _build_email(
     return msg
 
 
-def _smtp_send(msg: MIMEMultipart) -> Tuple[bool, str]:
+def _smtp_send_now(msg: MIMEMultipart) -> Tuple[bool, str]:
     """
-    Sends using explicit envelope sender/recipients so Return-Path is stable.
-    This avoids Gmail 550-5.7.1 complaints about missing/odd headers.
+    Short-timeout, non-blocking-friendly SMTP send.
+    Never raises; returns (ok, info).
     """
+    if not EMAIL_ENABLED:
+        return False, 'email disabled'
     if not EMAIL_ADDRESS or not EMAIL_PASSWORD:
         return False, 'Missing EMAIL_ADDRESS or EMAIL_PASSWORD'
     try:
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10) as server:
+        # Tight timeouts so requests don't hang workers
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=8) as server:
             server.ehlo()
-            server.starttls()
-            server.ehlo()
+            try:
+                server.starttls(timeout=5)
+                server.ehlo()
+            except Exception:
+                # If your provider requires implicit TLS, switch to SMTP_SSL instead
+                pass
             server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
 
             # Build envelope recipients from To/Cc/Bcc headers
@@ -221,15 +245,32 @@ def _smtp_send(msg: MIMEMultipart) -> Tuple[bool, str]:
                 if msg.get(h):
                     to_addrs.extend([a.strip() for a in msg[h].split(',') if a.strip()])
 
-            # Ensure Bcc is not present in headers actually sent
             if 'Bcc' in msg:
                 del msg['Bcc']
 
-            # Envelope sender must be the authenticated address for best deliverability
             server.send_message(msg, from_addr=EMAIL_ADDRESS, to_addrs=to_addrs)
         return True, 'sent'
-    except Exception as e:
-        return False, str(e)
+    except (socket.timeout, smtplib.SMTPException, OSError) as e:
+        return False, f"{e.__class__.__name__}: {e}"
+
+
+def send_email_async(msg: MIMEMultipart) -> None:
+    """
+    Fire-and-forget email sending. Safe in request path.
+    """
+    # Never send for health checks
+    if _is_healthcheck(request):
+        return
+
+    def task():
+        ok, info = _smtp_send_now(msg)
+        if not ok:
+            current_app.logger.warning(f"email not sent: {info}")
+
+    try:
+        executor.submit(task)
+    except Exception:
+        current_app.logger.exception("schedule email failed")
 
 
 # --- Beautiful emails ----------------------------------------------------------
@@ -238,13 +279,11 @@ def send_visitor_email(visitor_data: dict) -> None:
         app.logger.info(f"Suspicious visitor; not emailing. IP={visitor_data.get('ip')}")
         return
 
-    # Helpers
     def esc(x): return html.escape(str(x if x is not None else ''))
     gd = visitor_data.get('geodata', {}) or {}
     dev = visitor_data.get('device', {}) or {}
     headers = visitor_data.get('headers', {}) or {}
 
-    # Plain-text fallback
     body_text = f"""Visitor analytics
 
 Time: {visitor_data.get('timestamp')}
@@ -269,7 +308,6 @@ Headers:
 {_json.dumps(headers, indent=2)}
 """
 
-    # Clean JSON for HTML <pre>
     headers_json = html.escape(_json.dumps(headers, indent=2))
 
     body_html = f"""
@@ -296,7 +334,6 @@ Headers:
               <td style="padding:20px 24px;">
                 <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:0 12px;">
 
-                  <!-- Row: Basics -->
                   <tr>
                     <td style="padding:16px;border:1px solid #1f2937;background:#0b1220;border-radius:12px;">
                       <div style="display:flex;gap:18px;flex-wrap:wrap;">
@@ -319,7 +356,6 @@ Headers:
                     </td>
                   </tr>
 
-                  <!-- Row: Device -->
                   <tr>
                     <td style="padding:16px;border:1px solid #1f2937;background:#0b1220;border-radius:12px;">
                       <div style="display:flex;gap:18px;flex-wrap:wrap;">
@@ -341,7 +377,6 @@ Headers:
                     </td>
                   </tr>
 
-                  <!-- Row: Details -->
                   <tr>
                     <td style="padding:16px;border:1px solid #1f2937;background:#0b1220;border-radius:12px;">
                       <div style="font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;">Details</div>
@@ -355,7 +390,6 @@ Headers:
                     </td>
                   </tr>
 
-                  <!-- Row: Headers (preformatted) -->
                   <tr>
                     <td style="padding:16px;border:1px solid #1f2937;background:#0b1220;border-radius:12px;">
                       <div style="font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;">Request Headers</div>
@@ -389,11 +423,8 @@ Headers:
         body_text=body_text,
         body_html=body_html,
     )
-    ok, info = _smtp_send(msg)
-    if ok:
-        app.logger.info(f"Visitor email sent to {VISITOR_REPORT_TO}")
-    else:
-        app.logger.warning(f"Visitor email failed: {info}")
+    # Fire-and-forget
+    send_email_async(msg)
 
 
 def send_application_notification(job_title: str, application_data: dict) -> None:
@@ -401,7 +432,6 @@ def send_application_notification(job_title: str, application_data: dict) -> Non
     g_field = lambda k, d='': html.escape(str(application_data.get(k, d) or ''))
     title = html.escape(job_title)
 
-    # Plain-text fallback
     body_text = f"""New job application received
 
 Role: {job_title}
@@ -413,7 +443,6 @@ Education: {g_field('education')}
 Experience: {g_field('work_experience')}
 """
 
-    # Polished HTML (inline styles for client compatibility)
     body_html = f"""
 <!doctype html>
 <html>
@@ -500,11 +529,7 @@ Experience: {g_field('work_experience')}
         body_text=body_text,
         body_html=body_html,
     )
-    ok, info = _smtp_send(msg)
-    if ok:
-        app.logger.info(f"Application email sent to {APPLICATION_TO}")
-    else:
-        app.logger.warning(f"Application email failed: {info}")
+    send_email_async(msg)  # non-blocking
 
 
 def send_applicant_confirmation_email(application_data: Dict[str, Any], job_title: str) -> None:
@@ -572,11 +597,7 @@ def send_applicant_confirmation_email(application_data: Dict[str, Any], job_titl
         to=applicant_email,
         body_html=body_html,
     )
-    ok, info = _smtp_send(msg)
-    if ok:
-        app.logger.info(f"Confirmation email sent to {applicant_email}")
-    else:
-        app.logger.warning(f"Confirmation email failed: {info}")
+    send_email_async(msg)  # non-blocking
 
 
 # --- Request lifecycle hooks --------------------------------------------------
@@ -586,6 +607,10 @@ def track_visitor():
     Enhanced visitor tracking with spam/bot protection.
     IMPORTANT: Return None to allow the request to continue.
     """
+    # Health checks: skip all tracking/logging/emails
+    if _is_healthcheck(request):
+        return None
+
     # Skip static files
     if request.path.startswith('/static'):
         return None
@@ -619,7 +644,7 @@ def track_visitor():
         'ip': ip,
         'timestamp': datetime.utcnow().isoformat(),
         'first_visit': first_visit,
-        'path': request.path,
+        'path': request.path or '/',
         'referrer': request.headers.get('Referer'),
         'raw_ua': request.headers.get('User-Agent'),
         'headers': dict(request.headers),
@@ -628,11 +653,17 @@ def track_visitor():
         'query_params': dict(request.args),
     }
 
-    # Persist visit (do not crash app if DB fails)
+    # Persist visit in background (never crash app if DB fails)
+    def log_task(payload: dict):
+        try:
+            log_visitor(payload)
+        except Exception as e:
+            current_app.logger.warning(f"log_visitor failed: {e}")
+
     try:
-        log_visitor(visitor_data)
-    except Exception as e:
-        app.logger.warning(f"log_visitor failed: {e}")
+        executor.submit(log_task, visitor_data.copy())
+    except Exception:
+        current_app.logger.exception("schedule visitor log failed")
 
     # Daily notification decision (cookie-based + in-memory)
     last_visit_cookie = request.cookies.get(TRACKING_COOKIE)
@@ -641,7 +672,7 @@ def track_visitor():
 
     if should_notify_today and should_send_notification(visitor_data) and not is_suspicious_visitor(visitor_data):
         try:
-            send_visitor_email(visitor_data)
+            send_visitor_email(visitor_data)  # this is async under the hood
         except Exception as e:
             app.logger.warning(f"send_visitor_email failed: {e}")
 
@@ -675,8 +706,12 @@ def set_tracking_cookies(response):
 
 
 # --- Routes -------------------------------------------------------------------
-@app.route("/")
+@app.route("/", methods=["GET", "HEAD"])
 def home():
+    # Respond instantly to health checks
+    if _is_healthcheck(request):
+        return ("", 200)
+
     try:
         jobs = get_jobs()
     except Exception as e:
@@ -700,6 +735,10 @@ def iloveyou():
 
 @app.route("/job/<int:id>/apply", methods=['POST'])
 def apply_to_job(id: int):
+    # Health checks should never hit this, but be safe
+    if _is_healthcheck(request):
+        return ("", 200)
+
     # Honeypot check
     if request.form.get('website'):
         app.logger.info("Bot detected via honeypot field")
@@ -720,16 +759,29 @@ def apply_to_job(id: int):
         'resume_path': request.form.get('resume_path'),
     }
 
+    # Save to DB first; if that fails, tell the user
     try:
         add_application_to_db(job['title'], data)
-        send_application_notification(job['title'], data)
-        send_applicant_confirmation_email(data, job['title'])
-        return render_template('applicationsubmited.html', application=data, job=job)
     except Exception as e:
-        app.logger.error(f"apply_to_job failed: {e}")
-        return f"An error occurred: {str(e)}", 500
+        app.logger.error(f"add_application_to_db failed: {e}")
+        return f"An error occurred while saving your application. Please try again. ({e})", 500
+
+    # Queue emails but never block the response
+    try:
+        send_application_notification(job['title'], data)
+    except Exception as e:
+        app.logger.warning(f"send_application_notification failed: {e}")
+
+    try:
+        send_applicant_confirmation_email(data, job['title'])
+    except Exception as e:
+        app.logger.warning(f"send_applicant_confirmation_email failed: {e}")
+
+    # Success page regardless of email status
+    return render_template('applicationsubmited.html', application=data, job=job)
 
 
 # --- Entrypoint ---------------------------------------------------------------
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True)
+    # Replit: debug True is fine locally; Render ignores this running gunicorn
+    app.run(host='0.0.0.0', port=int(os.getenv("PORT", "5000")), debug=True)
