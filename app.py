@@ -627,9 +627,9 @@ def track_visitor():
 
     # Country access check (only enforce if we have a confident country)
     country = geodata.get('country')
-    if country and ALLOWED_COUNTRIES and (country not in ALLOWED_COUNTRIES):
+    ##if country and ALLOWED_COUNTRIES and (country not in ALLOWED_COUNTRIES):
         # Block access with a page; this is a legitimate early return
-        return render_template('access_denied.html'), 403
+    ##    return render_template('access_denied.html'), 403
 
     # Visitor tracking data
     visitor_id = request.cookies.get(VISITOR_COOKIE)
