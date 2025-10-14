@@ -147,6 +147,8 @@ class MailTask:
         self.body_text = body_text
         self.from_name = from_name
         self.reply_to = reply_to
+        # NEW: short correlation id for logs + SendGrid custom args
+        self.mail_id = str(uuid.uuid4())[:12]
 
 
 class AsyncMailer:
@@ -164,9 +166,10 @@ class AsyncMailer:
             return
         try:
             self.q.put_nowait(task)
-            logger.info(f"Email enqueued for {task.to_addr}: {task.subject}")
+            # NEW: structured enqueue log with mail_id
+            logger.info("mail.enqueue mail_id=%s to=%s subject=%s", task.mail_id, task.to_addr, task.subject)
         except Exception as e:
-            logger.error(f"Email queue full; dropping email to {task.to_addr}: {e}")
+            logger.error("Email queue full; dropping email to %s: %s", task.to_addr, e)
 
     def _run(self):
         while True:
@@ -176,9 +179,11 @@ class AsyncMailer:
                 continue
             try:
                 send_email_with_retry(self.cfg, task, self.cfg.email_max_retries)
-                logger.info(f"Email sent successfully: to={task.to_addr} subject={task.subject}")
+                # NEW: structured success log
+                logger.info("mail.sent mail_id=%s to=%s subject=%s", task.mail_id, task.to_addr, task.subject)
             except Exception as e:
-                logger.error(f"Failed to send email to {task.to_addr} after retries: {e}")
+                # NEW: structured failure log
+                logger.error("mail.fail mail_id=%s to=%s err=%s", task.mail_id, task.to_addr, e)
             finally:
                 self.q.task_done()
 
@@ -193,7 +198,8 @@ def send_email_with_retry(cfg: AppConfig, task: MailTask, max_retries: int = 2) 
             if attempt == max_retries - 1:  # Last attempt
                 raise
             wait_time = (attempt + 1) * 2  # Exponential backoff: 2, 4 seconds
-            logger.warning(f"Email attempt {attempt + 1} failed, retrying in {wait_time}s: {e}")
+            # NEW: structured retry log with backoff
+            logger.warning("mail.retry mail_id=%s attempt=%s wait=%ss err=%s", task.mail_id, attempt + 1, wait_time, e)
             time.sleep(wait_time)
 
 
@@ -203,7 +209,7 @@ def send_email_via_provider(cfg: AppConfig, task: MailTask) -> None:
     reply_to = task.reply_to or cfg.reply_to
     timeout = cfg.email_timeout
 
-    logger.info(f"Attempting to send email via {cfg.email_provider} from {cfg.email_address} to {task.to_addr}")
+    logger.info("Attempting to send email via %s from %s to %s", cfg.email_provider, cfg.email_address, task.to_addr)
 
     if cfg.email_provider == "sendgrid":
         if not cfg.sendgrid_api_key:
@@ -218,10 +224,19 @@ def send_email_via_provider(cfg: AppConfig, task: MailTask) -> None:
 
         logger.info("Using SendGrid API")
         payload = {
-            "personalizations": [{"to": [{"email": task.to_addr}]}],
+            "personalizations": [{
+                "to": [{"email": task.to_addr}],
+                # NEW: make events searchable & correlate logs
+                "custom_args": {
+                    "mail_id": task.mail_id,
+                    "env": cfg.flask_env
+                }
+            }],
             "from": {"email": cfg.email_address, "name": task.from_name or cfg.from_name},
             "subject": task.subject,
             "content": [],
+            # NEW: category for Activity filters
+            "categories": ["fmjcareers"]
         }
 
         # Add content types
@@ -243,7 +258,7 @@ def send_email_via_provider(cfg: AppConfig, task: MailTask) -> None:
         if reply_to:
             payload["reply_to"] = {"email": reply_to}
 
-        logger.info(f"Sending to SendGrid API: {task.subject}")
+        logger.info("Sending to SendGrid API: %s", task.subject)
 
         try:
             resp = requests.post(
@@ -253,15 +268,21 @@ def send_email_via_provider(cfg: AppConfig, task: MailTask) -> None:
                 timeout=timeout
             )
 
-            # Log the response for debugging
-            logger.info(f"SendGrid response status: {resp.status_code}")
+            # NEW: capture provider ids for correlation
+            sg_msg_id = resp.headers.get("X-Message-Id") or resp.headers.get("X-Message-ID")
+            sg_req_id = resp.headers.get("X-Request-Id")
+            logger.info(
+                "mail.provider_response provider=sendgrid mail_id=%s status=%s sg_message_id=%s sg_request_id=%s",
+                task.mail_id, resp.status_code, sg_msg_id, sg_req_id
+            )
 
             if resp.status_code == 202:
-                logger.info("SendGrid email accepted for delivery")
+                logger.info("mail.accepted provider=sendgrid mail_id=%s", task.mail_id)
                 return
             elif resp.status_code >= 400:
                 error_detail = resp.text
-                logger.error(f"SendGrid API error {resp.status_code}: {error_detail}")
+                logger.error("mail.error provider=sendgrid mail_id=%s status=%s body=%s",
+                             task.mail_id, resp.status_code, error_detail)
 
                 # Provide more user-friendly error messages
                 if resp.status_code == 401:
@@ -273,7 +294,7 @@ def send_email_via_provider(cfg: AppConfig, task: MailTask) -> None:
                 else:
                     resp.raise_for_status()
             else:
-                logger.warning(f"Unexpected SendGrid response: {resp.status_code}")
+                logger.warning("Unexpected SendGrid response: %s", resp.status_code)
                 resp.raise_for_status()
 
         except requests.exceptions.Timeout:
@@ -283,7 +304,7 @@ def send_email_via_provider(cfg: AppConfig, task: MailTask) -> None:
             logger.error("SendGrid API connection error")
             raise RuntimeError("Cannot connect to email service")
         except Exception as e:
-            logger.error(f"SendGrid unexpected error: {e}")
+            logger.error("SendGrid unexpected error: %s", e)
             raise
 
     elif cfg.email_provider == "mailgun":
@@ -400,9 +421,9 @@ def queue_email(
     )
     try:
         mailer.enqueue(task)
-        logger.info(f"Email queued successfully for {to_addr}")
+        logger.info("Email queued successfully for %s", to_addr)
     except Exception as e:
-        logger.error(f"Failed to queue email to {to_addr}: {e}")
+        logger.error("Failed to queue email to %s: %s", to_addr, e)
 
 
 # -----------------------------------------------------------------------------
@@ -1107,6 +1128,30 @@ def apply_to_job(id: int):
     except Exception as e:
         logger.exception(f"Application handling failed for {data.get('full_name')}")
         return f"An error occurred: {str(e)}", 500
+
+
+# NEW: SendGrid Event Webhook (delivery, bounce, open, click, etc.)
+@app.post("/hooks/sendgrid")
+def sendgrid_events():
+    token = request.args.get("token")
+    if token != os.getenv("SENDGRID_WEBHOOK_TOKEN"):
+        return "unauthorized", 401
+    try:
+        events = request.get_json(force=True, silent=False)
+        for ev in events or []:
+            logger.info(
+                "mail.event provider=sendgrid event=%s sg_message_id=%s email=%s mail_id=%s ts=%s reason=%s",
+                ev.get("event"),
+                ev.get("sg_message_id"),
+                ev.get("email"),
+                (ev.get("custom_args") or {}).get("mail_id"),
+                ev.get("timestamp"),
+                ev.get("reason"),
+            )
+    except Exception:
+        logger.exception("mail.event.parse_error")
+        return "bad request", 400
+    return "ok", 200
 
 
 # Debug routes for email testing
