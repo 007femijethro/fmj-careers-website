@@ -468,7 +468,11 @@ def track_visitor() -> Optional[Tuple[str, int]]:
         return "Access denied", 403
 
     # Skip static and health
-    if request.path.startswith("/static") or request.path == "/healthz":
+    if (
+        request.path.startswith("/static")
+        or request.path == "/healthz"
+        or request.path.startswith("/hooks/")  # <-- allow SendGrid webhook
+    ):
         return None
 
     # Resolve IP (respect X-Forwarded-For)
