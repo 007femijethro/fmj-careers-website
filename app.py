@@ -8,7 +8,7 @@ import logging
 import time
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 from queue import Queue, Empty
 from threading import Thread
 
@@ -19,14 +19,12 @@ from flask import (
     request,
     make_response,
     jsonify,
-    g,
 )
 from dotenv import load_dotenv
 from email.utils import formataddr
-from user_agents import parse as parse_ua
 
 # Your own DB helpers
-from database import get_jobs, get_job, add_application_to_db, log_visitor
+from database import get_jobs, get_job, add_application_to_db
 
 
 # -----------------------------------------------------------------------------
@@ -34,11 +32,13 @@ from database import get_jobs, get_job, add_application_to_db, log_visitor
 # -----------------------------------------------------------------------------
 load_dotenv()
 
+
 def _get_bool(name: str, default: bool = False) -> bool:
     val = os.getenv(name)
     if val is None:
         return default
     return str(val).strip().lower() in {"1", "true", "yes", "on"}
+
 
 def _get_int(name: str, default: int) -> int:
     try:
@@ -59,7 +59,7 @@ class AppConfig:
     from_name: str = os.getenv("FROM_NAME", "FMJ Careers")
     reply_to: Optional[str] = os.getenv("REPLY_TO") or None
     admin_to: str = os.getenv("ADMIN_TO", "")
-    notify_to: str = os.getenv("NOTIFY_TO", "")
+    notify_to: str = os.getenv("NOTIFY_TO", "")  # kept for debug/test routes
 
     # SendGrid
     sendgrid_api_key: str = os.getenv("SENDGRID_API_KEY", "")
@@ -82,22 +82,12 @@ class AppConfig:
     # Test route flag
     enable_email_test_route: bool = _get_bool("ENABLE_EMAIL_TEST_ROUTE", True)  # Enabled for debugging
 
-    # Tracking / Access control
-    allowed_countries_csv: str = os.getenv("ALLOWED_COUNTRIES", "United States,Nigeria")
-    visitor_cookie: str = os.getenv("VISITOR_COOKIE", "visitor_uid")
-    tracking_cookie: str = os.getenv("TRACKING_COOKIE", "last_visit")
-    cookie_days: int = _get_int("COOKIE_DAYS", 365)
-
     # Security
     served_over_https: bool = _get_bool("SERVED_OVER_HTTPS", True)  # Render uses HTTPS
 
     # Email timeout and retry settings
     email_timeout: int = _get_int("EMAIL_TIMEOUT", 10)
     email_max_retries: int = _get_int("EMAIL_MAX_RETRIES", 2)
-
-    @property
-    def allowed_countries(self) -> Tuple[str, ...]:
-        return tuple(c.strip() for c in self.allowed_countries_csv.split(",") if c.strip())
 
     @property
     def is_render(self) -> bool:
@@ -147,7 +137,7 @@ class MailTask:
         self.body_text = body_text
         self.from_name = from_name
         self.reply_to = reply_to
-        # NEW: short correlation id for logs + SendGrid custom args
+        # short correlation id for logs + SendGrid custom args
         self.mail_id = str(uuid.uuid4())[:12]
 
 
@@ -166,7 +156,6 @@ class AsyncMailer:
             return
         try:
             self.q.put_nowait(task)
-            # NEW: structured enqueue log with mail_id
             logger.info("mail.enqueue mail_id=%s to=%s subject=%s", task.mail_id, task.to_addr, task.subject)
         except Exception as e:
             logger.error("Email queue full; dropping email to %s: %s", task.to_addr, e)
@@ -179,10 +168,8 @@ class AsyncMailer:
                 continue
             try:
                 send_email_with_retry(self.cfg, task, self.cfg.email_max_retries)
-                # NEW: structured success log
                 logger.info("mail.sent mail_id=%s to=%s subject=%s", task.mail_id, task.to_addr, task.subject)
             except Exception as e:
-                # NEW: structured failure log
                 logger.error("mail.fail mail_id=%s to=%s err=%s", task.mail_id, task.to_addr, e)
             finally:
                 self.q.task_done()
@@ -198,7 +185,6 @@ def send_email_with_retry(cfg: AppConfig, task: MailTask, max_retries: int = 2) 
             if attempt == max_retries - 1:  # Last attempt
                 raise
             wait_time = (attempt + 1) * 2  # Exponential backoff: 2, 4 seconds
-            # NEW: structured retry log with backoff
             logger.warning("mail.retry mail_id=%s attempt=%s wait=%ss err=%s", task.mail_id, attempt + 1, wait_time, e)
             time.sleep(wait_time)
 
@@ -226,7 +212,6 @@ def send_email_via_provider(cfg: AppConfig, task: MailTask) -> None:
         payload = {
             "personalizations": [{
                 "to": [{"email": task.to_addr}],
-                # NEW: make events searchable & correlate logs
                 "custom_args": {
                     "mail_id": task.mail_id,
                     "env": cfg.flask_env
@@ -235,7 +220,6 @@ def send_email_via_provider(cfg: AppConfig, task: MailTask) -> None:
             "from": {"email": cfg.email_address, "name": task.from_name or cfg.from_name},
             "subject": task.subject,
             "content": [],
-            # NEW: category for Activity filters
             "categories": ["fmjcareers"]
         }
 
@@ -268,7 +252,6 @@ def send_email_via_provider(cfg: AppConfig, task: MailTask) -> None:
                 timeout=timeout
             )
 
-            # NEW: capture provider ids for correlation
             sg_msg_id = resp.headers.get("X-Message-Id") or resp.headers.get("X-Message-ID")
             sg_req_id = resp.headers.get("X-Request-Id")
             logger.info(
@@ -284,7 +267,6 @@ def send_email_via_provider(cfg: AppConfig, task: MailTask) -> None:
                 logger.error("mail.error provider=sendgrid mail_id=%s status=%s body=%s",
                              task.mail_id, resp.status_code, error_detail)
 
-                # Provide more user-friendly error messages
                 if resp.status_code == 401:
                     raise RuntimeError("SendGrid authentication failed - check your API key")
                 elif resp.status_code == 403:
@@ -399,6 +381,7 @@ def send_email_via_provider(cfg: AppConfig, task: MailTask) -> None:
 
 mailer = AsyncMailer(cfg)
 
+
 def queue_email(
     subject: str,
     to_addr: str,
@@ -427,137 +410,10 @@ def queue_email(
 
 
 # -----------------------------------------------------------------------------
-# Helpers
-# -----------------------------------------------------------------------------
-def get_geolocation(ip: str) -> Dict[str, Any]:
-    """Get geolocation from ip-api.com with a short timeout."""
-    if ip in ("127.0.0.1", "::1"):
-        return {"status": "localhost"}
-    try:
-        resp = requests.get(f"http://ip-api.com/json/{ip}?fields=66846719", timeout=3)
-        resp.raise_for_status()
-        return resp.json()
-    except Exception as e:
-        logger.debug("Geo lookup failed for IP=%s: %s", ip, e)
-        return {"error": str(e), "status": "error"}
-
-def get_device_fingerprint(req) -> Dict[str, Any]:
-    ua = parse_ua(req.headers.get("User-Agent", ""))
-    return {
-        "browser": f"{ua.browser.family} {ua.browser.version_string}",
-        "os": f"{ua.os.family} {ua.os.version_string}",
-        "device": ua.device.family,
-        "is_mobile": ua.is_mobile,
-        "is_tablet": ua.is_tablet,
-        "is_pc": ua.is_pc,
-        "is_bot": ua.is_bot,
-        "languages": req.headers.get("Accept-Language", ""),
-    }
-
-def today_str() -> str:
-    return datetime.utcnow().strftime("%Y-%m-%d")
-
-
-# -----------------------------------------------------------------------------
-# Before/After Request: Tracking + Access Control
-# -----------------------------------------------------------------------------
-@app.before_request
-def track_visitor() -> Optional[Tuple[str, int]]:
-    # Block admin paths
-    if request.path.lower().startswith(("/wp-admin", "/wordpress/wp-admin")):
-        return "Access denied", 403
-
-    # Skip static and health
-    if (
-        request.path.startswith("/static")
-        or request.path == "/healthz"
-        or request.path.startswith("/hooks/")  # <-- allow SendGrid webhook
-    ):
-        return None
-
-    # Resolve IP (respect X-Forwarded-For)
-    ip = request.headers.get("X-Forwarded-For", request.remote_addr or "")
-    if "," in ip:
-        ip = ip.split(",")[0].strip()
-
-    geodata = get_geolocation(ip)
-    country = geodata.get("country", "Unknown")
-
-    # Access control by country
-    if cfg.allowed_countries and country not in cfg.allowed_countries:
-        logger.info(f"Access denied for country: {country} from IP: {ip}")
-        return render_template("access_denied.html"), 403
-
-    # Visitor cookies
-    visitor_id = request.cookies.get(cfg.visitor_cookie) or str(uuid.uuid4())
-    last_visit = request.cookies.get(cfg.tracking_cookie)
-    first_visit = not request.cookies.get(cfg.visitor_cookie)
-
-    # Fingerprint
-    device_data = get_device_fingerprint(request)
-
-    # Prepare visitor data
-    visitor_data = {
-        "visitor_id": visitor_id,
-        "ip": ip,
-        "timestamp": datetime.utcnow().isoformat(),
-        "first_visit": first_visit,
-        "path": request.path,
-        "referrer": request.headers.get("Referer"),
-        "raw_ua": request.headers.get("User-Agent"),
-        "geodata": geodata,
-        "device": device_data,
-        "query_params": dict(request.args),
-    }
-
-    # Persist to DB
-    try:
-        log_visitor(visitor_data)
-    except Exception:
-        logger.exception("Failed to log visitor")
-
-    # Flags for after_request & notification
-    g.notify_today = (not last_visit) or (last_visit != today_str())
-    g.visitor_id = visitor_id
-    g.set_cookies = {
-        cfg.visitor_cookie: (visitor_id, cfg.cookie_days),
-        cfg.tracking_cookie: (today_str(), 1),
-    }
-
-    # Queue a small daily alert (never block the request)
-    if g.notify_today and cfg.notify_to:
-        try:
-            send_visitor_notification(visitor_data)
-        except Exception:
-            logger.exception("Queueing visitor email failed (non-fatal)")
-
-    return None
-
-
-
-@app.after_request
-def set_tracking_cookies(response):
-    for name, (value, days) in getattr(g, "set_cookies", {}).items():
-        secure = cfg.served_over_https
-        response.set_cookie(
-            key=name,
-            value=value,
-            max_age=days * 24 * 60 * 60,
-            httponly=True,
-            secure=secure,
-            samesite="Lax",
-        )
-    return response
-
-
-# -----------------------------------------------------------------------------
-# Email Composers (enqueue; non-blocking)
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
 # Email Composers (enqueue; non-blocking)
 # -----------------------------------------------------------------------------
 def send_application_notification(job_title: str, application_data: Dict[str, Any]) -> None:
-    """Send beautifully formatted notification to admin about new application."""
+    """Send formatted notification to admin about new application."""
     if not cfg.admin_to:
         logger.warning("No ADMIN_TO configured for application notifications")
         return
@@ -565,7 +421,6 @@ def send_application_notification(job_title: str, application_data: Dict[str, An
     applicant_name = application_data.get('full_name', 'Unknown Applicant')
     subject = f"📬 New Application for {job_title} - {applicant_name}"
 
-    # Build optional LinkedIn HTML separately (fix for multiline f-string issue)
     linkedin_html = ""
     if application_data.get('linkedin_url'):
         linkedin_url = application_data.get('linkedin_url')
@@ -766,244 +621,6 @@ FMJ Careers Portal - Automated Notification
     queue_email(subject, cfg.admin_to, body_html=body_html, body_text=body_text, from_name="FMJ Careers Portal")
 
 
-def send_visitor_notification(visitor_data: Dict[str, Any]) -> None:
-    """Send beautifully formatted visitor analytics notification."""
-    if not cfg.notify_to:
-        return
-
-    visitor_id = visitor_data.get('visitor_id', 'Unknown')
-    country = visitor_data.get('geodata', {}).get('country', 'Unknown')
-    city = visitor_data.get('geodata', {}).get('city', 'Unknown')
-    is_first_visit = visitor_data.get('first_visit', False)
-
-    subject = f"🌍 {'New' if is_first_visit else 'Returning'} Visitor from {country}"
-
-    # Determine visitor type and icon
-    if is_first_visit:
-        visitor_type = "First-time Visitor"
-        visitor_icon = "🆕"
-        badge_color = "linear-gradient(135deg, #20c997 0%, #099268 100%)"
-    else:
-        visitor_type = "Returning Visitor"
-        visitor_icon = "🔁"
-        badge_color = "linear-gradient(135deg, #339af0 0%, #1c7ed6 100%)"
-
-    body_html = f"""
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <style>
-        body {{
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
-            margin: 0;
-            padding: 20px;
-        }}
-        .container {{
-            max-width: 600px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            overflow: hidden;
-        }}
-        .header {{
-            background: {badge_color};
-            color: white;
-            padding: 25px;
-            text-align: center;
-        }}
-        .header h1 {{
-            margin: 0;
-            font-size: 22px;
-            font-weight: 600;
-        }}
-        .content {{
-            padding: 25px;
-        }}
-        .stats-grid {{
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin: 20px 0;
-        }}
-        .stat-card {{
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
-            border: 1px solid #e9ecef;
-        }}
-        .stat-icon {{
-            font-size: 24px;
-            margin-bottom: 8px;
-        }}
-        .stat-label {{
-            font-weight: 600;
-            color: #495057;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }}
-        .stat-value {{
-            color: #212529;
-            font-size: 14px;
-            font-weight: 600;
-            margin-top: 5px;
-        }}
-        .map-section {{
-            background: linear-gradient(135deg, #ffe8cc 0%, #ffa94d 100%);
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-            text-align: center;
-        }}
-        .device-info {{
-            background: #e7f5ff;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 15px 0;
-            border-left: 4px solid #339af0;
-        }}
-        .footer {{
-            background: #f8f9fa;
-            padding: 20px;
-            text-align: center;
-            color: #6c757d;
-            font-size: 12px;
-        }}
-        .badge {{
-            background: {badge_color};
-            color: white;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-            display: inline-block;
-            margin-bottom: 15px;
-        }}
-        .timestamp {{
-            color: #6c757d;
-            font-size: 12px;
-            text-align: center;
-            margin-bottom: 15px;
-        }}
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>{visitor_icon} {visitor_type}</h1>
-            <p style="margin: 10px 0 0 0; opacity: 0.9;">FMJ Careers Analytics</p>
-        </div>
-
-        <div class="content">
-            <div class="timestamp">
-                📅 {datetime.utcnow().strftime('%B %d, %Y at %H:%M UTC')}
-            </div>
-
-            <div class="badge">{visitor_type}</div>
-
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon">🌎</div>
-                    <div class="stat-label">Country</div>
-                    <div class="stat-value">{country}</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">🏙️</div>
-                    <div class="stat-label">City</div>
-                    <div class="stat-value">{city if city != 'Unknown' else 'Not detected'}</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">🆔</div>
-                    <div class="stat-label">Visitor ID</div>
-                    <div class="stat-value" style="font-family: monospace; font-size: 10px;">{visitor_id[:8]}...</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">📊</div>
-                    <div class="stat-label">Visit Type</div>
-                    <div class="stat-value">{'First Visit' if is_first_visit else 'Return Visit'}</div>
-                </div>
-            </div>
-
-            <div class="map-section">
-                <div style="font-size: 48px; margin-bottom: 10px;">🗺️</div>
-                <div style="font-weight: 600; color: #d6336c; margin-bottom: 5px;">Visitor Location</div>
-                <div style="color: #495057;">
-                    {f"{city}, {country}" if city != "Unknown" else country}
-                </div>
-                {f'<div style="font-size: 11px; color: #6c757d; margin-top: 8px;">IP: {visitor_data.get("ip", "Unknown")}</div>' if visitor_data.get("ip") and visitor_data.get("ip") not in ["127.0.0.1", "::1"] else ''}
-            </div>
-
-            <div class="device-info">
-                <div style="display: flex; align-items: center; margin-bottom: 10px;">
-                    <span style="font-size: 20px; margin-right: 10px;">💻</span>
-                    <strong>Device Information</strong>
-                </div>
-                <div style="font-size: 13px;">
-                    <strong>Browser:</strong> {visitor_data.get('device', {}).get('browser', 'Unknown')}<br>
-                    <strong>OS:</strong> {visitor_data.get('device', {}).get('os', 'Unknown')}<br>
-                    <strong>Device:</strong> {visitor_data.get('device', {}).get('device', 'Unknown')}<br>
-                    <strong>Type:</strong> {'Mobile' if visitor_data.get('device', {}).get('is_mobile') else 'Tablet' if visitor_data.get('device', {}).get('is_tablet') else 'Desktop'}
-                </div>
-            </div>
-
-            <div style="background: #fff3cd; padding: 15px; border-radius: 10px; margin: 15px 0; border-left: 4px solid #ffc107;">
-                <div style="display: flex; align-items: center; margin-bottom: 8px;">
-                    <span style="font-size: 18px; margin-right: 10px;">📈</span>
-                    <strong>Engagement Metrics</strong>
-                </div>
-                <div style="font-size: 13px;">
-                    <strong>Page Visited:</strong> {visitor_data.get('path', 'Homepage')}<br>
-                    <strong>Referrer:</strong> {visitor_data.get('referrer', 'Direct visit')}<br>
-                    <strong>Languages:</strong> {visitor_data.get('device', {}).get('languages', 'Not detected')}
-                </div>
-            </div>
-        </div>
-
-        <div class="footer">
-            <p>🌐 Real-time analytics from FMJ Careers website</p>
-            <p>© 2025 FMJ Capitals. All rights reserved.</p>
-        </div>
-    </div>
-</body>
-</html>
-""".strip()
-
-    body_text = f"""
-VISITOR ANALYTICS - FMJ CAREERS
-{'='*50}
-
-{visitor_icon} {visitor_type}
-📅 {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}
-
-Location:
-🌎 Country: {country}
-🏙️ City: {city if city != 'Unknown' else 'Not detected'}
-🆔 Visitor ID: {visitor_id}
-
-Device Info:
-💻 Browser: {visitor_data.get('device', {}).get('browser', 'Unknown')}
-🖥️ OS: {visitor_data.get('device', {}).get('os', 'Unknown')}
-📱 Device: {visitor_data.get('device', {}).get('device', 'Unknown')}
-🔧 Type: {'Mobile' if visitor_data.get('device', {}).get('is_mobile') else 'Tablet' if visitor_data.get('device', {}).get('is_tablet') else 'Desktop'}
-
-Engagement:
-📈 Page: {visitor_data.get('path', 'Homepage')}
-🔗 Referrer: {visitor_data.get('referrer', 'Direct visit')}
-🌐 Languages: {visitor_data.get('device', {}).get('languages', 'Not detected')}
-
----
-FMJ Careers Analytics - Automated Report
-"""
-
-    queue_email(subject, cfg.notify_to, body_html=body_html, body_text=body_text, from_name="FMJ Careers Analytics")
-
-
 def send_applicant_confirmation_email(application_data: Dict[str, Any], job_title: str) -> None:
     if not isinstance(application_data, dict):
         raise ValueError("application_data must be a dictionary")
@@ -1074,8 +691,6 @@ def send_applicant_confirmation_email(application_data: Dict[str, Any], job_titl
     queue_email(subject, applicant_email, body_html=body_html, from_name="FMJ Careers")
 
 
-
-
 # -----------------------------------------------------------------------------
 # Routes
 # -----------------------------------------------------------------------------
@@ -1083,11 +698,13 @@ def send_applicant_confirmation_email(application_data: Dict[str, Any], job_titl
 def health():
     return jsonify({"ok": True, "time": datetime.utcnow().isoformat()})
 
+
 @app.route("/")
 def home():
     jobs = get_jobs()
     resp = make_response(render_template("home.html", jobs=jobs))
     return resp
+
 
 @app.route("/job/<int:id>")
 def show_job(id: int):
@@ -1096,9 +713,11 @@ def show_job(id: int):
         return "Job not found", 404
     return render_template("jobpage.html", job=job)
 
+
 @app.route("/iloveyou")
 def iloveyou():
     return render_template("iloveyou.html")
+
 
 @app.route("/job/<int:id>/apply", methods=["POST"])
 def apply_to_job(id: int):
@@ -1258,6 +877,7 @@ if cfg.enable_email_test_route:
 @app.errorhandler(404)
 def not_found(error):
     return render_template('404.html'), 404
+
 
 @app.errorhandler(500)
 def internal_error(error):
