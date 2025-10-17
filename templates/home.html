@@ -35,8 +35,28 @@
   <!-- Canonical URL -->
   <link rel="canonical" href="https://www.fmjcareers.com{{ request.path }}">
 
-  <!-- Favicon -->
-  <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+  <!-- Favicons -->
+  <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}"> <!-- keep for legacy -->
+  <meta name="robots" content="max-image-preview:large">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "FMJ Capitals",
+    "url": "https://www.fmjcareers.com",
+    "logo": "https://www.fmjcareers.com{{ url_for('static', filename='favicon-512.png') }}",
+    "sameAs": [
+      "https://www.linkedin.com/company/yourcompany"
+    ]
+  }
+  </script>
+
+
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
