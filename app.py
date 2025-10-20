@@ -1,4 +1,3 @@
-# app.py
 from __future__ import annotations
 
 import json
@@ -11,6 +10,9 @@ from datetime import datetime
 from typing import Any, Dict, Optional, Tuple
 from queue import Queue, Empty
 from threading import Thread
+import re
+from collections import deque, defaultdict
+from time import time as _now
 
 import requests
 from flask import (
@@ -48,7 +50,34 @@ def _get_int(name: str, default: int) -> int:
         return default
 
 
+# -----------------------------------------------------------------------------
+# Bot/scanner detection patterns & in-memory rate limiting (lightweight)
+# -----------------------------------------------------------------------------
+SUSPICIOUS_PATH_RE = re.compile(
+    r"""(?ix)
+        ( \.php($|[\?/])                # any .php
+        | ^/(wp-|wordpress/)             # wp-*, /wordpress/...
+        | ^/(xmlrpc\.php|wp-login\.php|wp-admin|wp-content|wp-includes)
+        | ^/(vendor|version|env|\.env)   # common probe paths
+        | /id3/license\.txt              # path seen in logs
+        )
+    """
+)
+
+BAD_UA_RE = re.compile(
+    r"""(?ix)
+        ( ^$ | curl | wget | python-requests | python-urllib | aiohttp | okhttp | go-http-client
+        | spider | crawler | bot | scan | scrape )
+    """
+)
+
+# Very light per-IP rate limiting (best-effort; use Redis for multi-instance)
+IP_HITS = defaultdict(lambda: deque(maxlen=40))  # keep last 40 timestamps
+RATE_LIMIT_WINDOW = 10.0  # seconds
+RATE_LIMIT_MAX = 30       # >30 hits / window => 429
 @dataclass(frozen=True)
+
+
 class AppConfig:
     secret_key: str = os.getenv("SECRET_KEY", "change-this-before-prod")
     flask_env: str = os.getenv("FLASK_ENV", "production")
