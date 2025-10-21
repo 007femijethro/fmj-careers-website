@@ -76,8 +76,6 @@ IP_HITS = defaultdict(lambda: deque(maxlen=40))  # keep last 40 timestamps
 RATE_LIMIT_WINDOW = 10.0  # seconds
 RATE_LIMIT_MAX = 30       # >30 hits / window => 429
 @dataclass(frozen=True)
-
-
 class AppConfig:
     secret_key: str = os.getenv("SECRET_KEY", "change-this-before-prod")
     flask_env: str = os.getenv("FLASK_ENV", "production")
@@ -491,6 +489,28 @@ def _try_render(name: str, status_code: int):
 
 
 # -----------------------------------------------------------------------------
+# Real-page detection for notifications
+# -----------------------------------------------------------------------------
+def _is_notifiable_path(path: str, method: str) -> bool:
+    """
+    Only treat *real*, user-facing GET pages as notifiable:
+      - "/" (home)
+      - "/job"
+      - "/job/<id>" (any GET under /job/, except explicit /apply actions)
+    Excludes non-GETs and "/job/<id>/apply".
+    """
+    if method != "GET":
+        return False
+    if path == "/":
+        return True
+    if path == "/job":
+        return True
+    if path.startswith("/job/") and not path.endswith("/apply"):
+        return True
+    return False
+
+
+# -----------------------------------------------------------------------------
 # Before/After Request: Tracking + Access Control
 # -----------------------------------------------------------------------------
 @app.before_request
@@ -549,13 +569,19 @@ def track_visitor() -> Optional[Tuple[str, int]]:
     except Exception:
         logger.exception("Failed to log visitor")
 
-    # Flags for after_request & notification
-    g.notify_today = (not last_visit) or (last_visit != today_str())
+    # Notify only for real URLs on first such visit of the day
+    notifiable = _is_notifiable_path(request.path, request.method)
+    today = today_str()
+    g.notify_today = notifiable and ((not last_visit) or (last_visit != today))
     g.visitor_id = visitor_id
-    g.set_cookies = {
-        cfg.visitor_cookie: (visitor_id, cfg.cookie_days),
-        cfg.tracking_cookie: (today_str(), 1),
-    }
+
+    # Only set/update daily cookie on notifiable hits
+    g.set_cookies = {}
+    if notifiable:
+        g.set_cookies = {
+            cfg.visitor_cookie: (visitor_id, cfg.cookie_days),
+            cfg.tracking_cookie: (today, 1),
+        }
 
     # Queue a small daily alert (never block the request)
     if g.notify_today and cfg.notify_to:
