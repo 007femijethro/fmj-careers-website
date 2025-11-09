@@ -1,0 +1,213 @@
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(255, 245, 248, 0.96); /* light pink */
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(244, 114, 182, 0.4);
+  }
+
+  .nav-inner {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .nav-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+  }
+
+  .nav-logo img {
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    object-fit: cover;
+  }
+
+  .nav-logo-text {
+    font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    color: #111827;
+    text-transform: uppercase;
+  }
+
+  .nav-tagline {
+    font-size: 11px;
+    color: #6b7280;
+    font-family: 'Open Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    font-size: 14px;
+    font-family: 'Open Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  .nav-links a {
+    text-decoration: none;
+    color: #4b5563;
+    opacity: 0.9;
+    transition: opacity 0.2s ease, color 0.2s ease;
+    white-space: nowrap;
+  }
+
+  .nav-links a:hover {
+    opacity: 1;
+    color: #111827;
+  }
+
+  .nav-links .nav-pill {
+    padding: 4px 9px;
+    border-radius: 999px;
+    border: 1px solid rgba(244, 114, 182, 0.7);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: rgba(255, 240, 246, 0.95);
+  }
+
+  .nav-cta {
+    text-decoration: none;
+    font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #ec4899, #db2777); /* pink */
+    color: #ffffff;
+    white-space: nowrap;
+    box-shadow: 0 10px 25px rgba(236, 72, 153, 0.35);
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .nav-cta span {
+    font-size: 16px;
+    line-height: 1;
+  }
+
+  .nav-cta:hover {
+    filter: brightness(1.05);
+  }
+
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .nav-menu-toggle {
+    display: none;
+    border: none;
+    background: transparent;
+    color: #4b5563;
+    font-size: 20px;
+    cursor: pointer;
+  }
+
+  /* Mobile layout */
+  @media (max-width: 768px) {
+    .nav-inner {
+      padding-inline: 16px;
+    }
+
+    /* Hide links by default on mobile */
+    .nav-links {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #ffffff;
+      padding: 10px 16px 12px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+      border-bottom: 1px solid rgba(244, 114, 182, 0.4);
+    }
+
+    .nav-links a {
+      padding: 4px 0;
+    }
+
+    /* When menu is open */
+    .nav-links.nav-open {
+      display: flex;
+    }
+
+    .nav-menu-toggle {
+      display: inline-flex;
+    }
+
+    .nav-right {
+      gap: 8px;
+    }
+
+    /* you can hide or shrink the CTA on very tiny screens if needed */
+  }
+</style>
+
+<header class="site-header">
+  <div class="nav-inner">
+    <div class="nav-left">
+      <a href="/" class="nav-logo">
+        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="FMJ Capitals logo">
+        <div>
+          <div class="nav-logo-text">FMJ Capitals</div>
+          <div class="nav-tagline">Investment Management & Advisory</div>
+        </div>
+      </a>
+    </div>
+
+    <nav class="nav-links">
+      <a href="/#about">About</a>
+      <a href="/#solutions">Investment solutions</a>
+      <a href="/#process">Our process</a>
+      <a href="/#clients">Who we serve</a>
+      <a href="/#insights">Insights</a>
+      <a href="/careers" class="nav-pill">Careers</a>
+    </nav>
+
+    <div class="nav-right">
+      <a href="/#contact" class="nav-cta">
+        Talk to our team <span>↗</span>
+      </a>
+      <button class="nav-menu-toggle" type="button" aria-label="Open navigation">
+        ☰
+      </button>
+    </div>
+  </div>
+</header>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const toggle = document.querySelector('.nav-menu-toggle');
+    const links = document.querySelector('.nav-links');
+
+    if (toggle && links) {
+      toggle.addEventListener('click', function () {
+        links.classList.toggle('nav-open');
+      });
+    }
+  });
+</script>

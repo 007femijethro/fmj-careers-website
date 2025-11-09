@@ -1131,6 +1131,11 @@ def home():
     jobs = get_jobs()
     resp = make_response(render_template("home.html", jobs=jobs))
     return resp
+    
+@app.route("/careers")
+def careers():
+    jobs = get_jobs()
+    return render_template("careers.html", jobs=jobs)
 
 @app.route("/job/<int:id>")
 def show_job(id: int):

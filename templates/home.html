@@ -1,312 +1,945 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>                              
-  <!-- Basic Meta -->
+<head>
   <meta charset="UTF-8">
+  <title>FMJ Capitals | Investment Management & Advisory</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="FMJ Capitals - Investing platform breaking down financial barriers">
-
-  <!-- Google Tag Manager -->
-  <script>(function(w,d,s,l,i){
-    w[l]=w[l]||[];w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});
-    var f=d.getElementsByTagName(s)[0], j=d.createElement(s), dl=l!='dataLayer'?'&l='+l:'';
-    j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
-    f.parentNode.insertBefore(j,f);
-  })(window,document,'script','dataLayer','GTM-NQZVVDDP');</script>
-  <!-- End Google Tag Manager -->
-
-  <!-- Open Graph / Social Media -->
-  <meta property="og:title" content="FMJ Capitals | Modern Investing Platform">
-  <meta property="og:description" content="Breaking down financial barriers with accessible investing solutions">
-  <meta property="og:image" content="https://www.fmjcareers.com{{ url_for('static', filename='sco11.jpg') }}">
-  <meta property="og:url" content="https://www.fmjcareers.com{{ request.path }}">
-  <meta property="og:type" content="website">
-  <meta property="og:site_name" content="FMJ Capitals">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="FMJ Capitals | Modern Investing Platform">
-  <meta name="twitter:description" content="Breaking down financial barriers with accessible investing solutions">
-  <meta name="twitter:image" content="https://www.fmjcareers.com{{ url_for('static', filename='social-preview.jpg') }}">
-  <meta name="twitter:creator" content="@fmjcareers">
-
-  <!-- Canonical URL -->
-  <link rel="canonical" href="https://www.fmjcareers.com{{ request.path }}">
-
-  <!-- Favicons -->
-  <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
-  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32.png') }}">
-  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16.png') }}">
-  <link rel="apple-touch-icon" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
-  <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}"> <!-- keep for legacy -->
-  <meta name="robots" content="max-image-preview:large">
-
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "name": "FMJ Capitals",
-    "url": "https://www.fmjcareers.com",
-    "logo": "https://www.fmjcareers.com{{ url_for('static', filename='favicon-512.png') }}",
-    "sameAs": [
-      "https://www.linkedin.com/company/yourcompany"
-    ]
-  }
-  </script>
-
-
+  <meta name="description" content="FMJ Capitals is an investment management and advisory firm focused on research-driven, risk-aware portfolios for long-term investors.">
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 
-  <title>FMJ Capitals Careers</title>
+  <!-- Favicon (optional, adjust filenames as needed) -->
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon-32.png') }}">
 
   <style>
-    /* Import Google Fonts */
-    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Open+Sans:wght@400;600&display=swap');
+    :root {
+      --bg: #fff5f8;
+      --bg-elevated: #ffffff;
+      --card: #ffffff;
+      --card-soft: #fff7fb;
+      --border-subtle: rgba(244, 114, 182, 0.35);
+      --border-strong: rgba(236, 72, 153, 0.85);
+      --primary: #ec4899;
+      --primary-soft: rgba(236, 72, 153, 0.12);
+      --accent: #db2777;
+      --accent-soft: rgba(219, 39, 119, 0.18);
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --text-soft: #9ca3af;
+      --text-strong: #030712;
+      --radius-card: 18px;
+      --radius-pill: 999px;
+      --shadow-soft: 0 20px 50px rgba(236, 72, 153, 0.18);
+      --shadow-button: 0 16px 40px rgba(236, 72, 153, 0.35);
+      --container-width: 1120px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
 
     body {
-      font-family: 'Open Sans', sans-serif;
-      background-color: #f4f4f9;
-      color: #333;
       margin: 0;
       padding: 0;
-      line-height: 1.6;
-      display: flex;
-      flex-direction: column;
       min-height: 100vh;
-    }
-
-    #container {
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 20px 15px;
-      background: white;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      border-radius: 8px;
-      flex-grow: 1;
-    }
-
-    .header {
+      background:
+        radial-gradient(circle at top left, rgba(252, 231, 243, 0.9), transparent 55%),
+        radial-gradient(circle at bottom right, rgba(251, 207, 232, 0.9), transparent 55%),
+        #fff5f8;
+      color: var(--text-main);
+      font-family: 'Open Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      margin-bottom: 30px;
     }
 
-    #logo {
-      height: 60px;
+    main {
+      flex: 1;
+    }
+
+    .page-shell {
+      max-width: var(--container-width);
+      margin: 0 auto;
+      padding: 28px 20px 48px;
+    }
+
+    /* HERO */
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+      gap: 28px;
+      align-items: center;
+      padding-top: 12px;
+      padding-bottom: 36px;
+    }
+
+    .hero-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 11px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border-subtle);
+      background: #fffafc;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .hero-pill-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--primary);
+      box-shadow: 0 0 0 4px var(--primary-soft);
+    }
+
+    .hero-title {
+      font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: clamp(30px, 4.2vw, 40px);
+      line-height: 1.1;
+      color: var(--text-strong);
+      margin: 0 0 14px;
+    }
+
+    .hero-highlight {
+      background: linear-gradient(135deg, #ec4899, #db2777);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero-subtitle {
+      font-size: 15px;
+      color: var(--text-muted);
+      max-width: 520px;
+      margin: 0 0 18px;
+    }
+
+    .hero-checklist {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 8px 16px;
+      margin-bottom: 18px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .hero-check-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hero-check-icon {
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      border: 1px solid var(--border-strong);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: var(--primary);
+      background: #fff;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
       margin-bottom: 10px;
     }
 
-    h1 {
-      font-family: 'Montserrat', sans-serif;
-      font-size: 36px;
+    .primary-btn,
+    .ghost-btn {
+      border-radius: var(--radius-pill);
+      padding: 9px 16px;
+      font-size: 13px;
+      font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
       font-weight: 600;
-      color: #2c3e50;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .primary-btn {
+      background: linear-gradient(135deg, #ec4899, #db2777);
+      color: #ffffff;
+      box-shadow: var(--shadow-button);
+    }
+
+    .primary-btn span {
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .ghost-btn {
+      background: #fff;
+      color: var(--text-main);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .hero-footnote {
+      font-size: 11px;
+      color: var(--text-soft);
+      max-width: 520px;
+    }
+
+    .hero-card {
+      border-radius: 22px;
+      background: var(--card);
+      border: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-soft);
+      padding: 14px;
+    }
+
+    .hero-card-figure {
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid rgba(244, 114, 182, 0.4);
+      min-height: 200px;
+      background: linear-gradient(135deg, #f9a8d4, #fbcfe8);
+      position: relative;
+    }
+
+    .hero-card-figure img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.85;
+    }
+
+    .hero-metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .hero-metric {
+      border-radius: 14px;
+      padding: 8px 10px;
+      background: #fffafc;
+      border: 1px solid var(--border-subtle);
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .hero-metric strong {
+      display: block;
+      font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 12px;
+      color: var(--text-main);
+      margin-bottom: 2px;
+    }
+
+    /* SECTIONS */
+
+    .section {
+      padding: 14px 0 4px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    .section-kicker {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--text-soft);
+    }
+
+    .section-title {
+      font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 20px;
+      color: var(--text-strong);
+      margin: 4px 0 0;
+    }
+
+    .section-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      max-width: 430px;
       margin: 0;
     }
 
-    #banner {
-      width: 100%;
-      height: 360px;
-      object-fit: cover;
-      border-radius: 8px;
-      margin-bottom: 30px;
+    .cards-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
     }
 
-    h2 {
-      font-family: 'Montserrat', sans-serif;
-      font-size: 28px;
-      color: #34495e;
-      text-align: center;
-      font-weight: 600;
-      margin-top: 20px;
-      margin-bottom: 20px;
+    .cards-grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
     }
 
-    p {
-      font-size: 18px;
-      color: #555;
-      margin-bottom: 20px;
+    .info-card {
+      border-radius: var(--radius-card);
+      background: var(--card);
+      border: 1px solid var(--border-subtle);
+      padding: 12px 12px 11px;
+      font-size: 13px;
+      color: var(--text-muted);
     }
 
-    .job-card {
-      background-color: #f9f9f9;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 16px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .job-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    }
-
-    .job-title {
-      color: #34495e;
-      margin-bottom: 8px;
-      font-size: 20px;
-      font-weight: 600;
-    }
-
-    .job-detail {
-      font-size: 16px;
-      color: #555;
+    .info-card-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--text-soft);
       margin-bottom: 4px;
     }
 
-    .job-content {
+    .info-card-title {
+      font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 15px;
+      margin: 0 0 4px;
+      color: var(--text-main);
+    }
+
+    .info-card-body {
+      margin: 0 0 6px;
+    }
+
+    .info-card-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-size: 12px;
+      color: var(--text-soft);
+    }
+
+    .info-card-list li {
+      margin: 2px 0;
       display: flex;
-      width: 100%;
+      gap: 6px;
     }
 
-    .job-details {
-      flex: 0 0 70%;
+    .info-card-list li::before {
+      content: "•";
+      color: var(--primary);
+      margin-top: -1px;
     }
 
-    .apply-button-container {
-      flex: 0 0 30%;
+    /* CLIENTS */
+
+    .clients-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .client-card {
+      border-radius: var(--radius-card);
+      background: var(--card);
+      border: 1px solid var(--border-subtle);
+      padding: 12px 12px 10px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .client-card h4 {
+      margin: 0 0 4px;
+      font-size: 14px;
+      font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text-main);
+    }
+
+    /* INSIGHTS */
+
+    .insights-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      gap: 14px;
+    }
+
+    .insights-list {
+      border-radius: var(--radius-card);
+      background: var(--card);
+      border: 1px solid var(--border-subtle);
+      padding: 10px 12px;
+      font-size: 12px;
+    }
+
+    .insight-item {
+      padding: 6px 0;
+      border-bottom: 1px dashed rgba(248, 187, 208, 0.9);
+    }
+
+    .insight-item:last-child {
+      border-bottom: none;
+    }
+
+    .insight-kicker {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--text-soft);
+      margin-bottom: 2px;
+    }
+
+    .insight-title {
+      font-size: 13px;
+      color: var(--text-main);
+      margin-bottom: 2px;
+    }
+
+    .insight-meta {
+      font-size: 11px;
+      color: var(--text-soft);
+    }
+
+    .insights-cta-card {
+      border-radius: var(--radius-card);
+      background: linear-gradient(135deg, #fdf2f8, #fef2ff);
+      border: 1px solid var(--border-subtle);
+      padding: 12px 12px 11px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .insights-cta-card h4 {
+      margin: 0 0 4px;
+      font-size: 14px;
+      font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text-main);
+    }
+
+    .tag-row {
       display: flex;
-      align-items: center;
-      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
     }
 
-    .apply-button {
-      font-family: 'Montserrat', sans-serif;
-      font-size: 16px;
-      font-weight: 600;
-      color: white;
-      background-color: #ff69b4; 
-      border: none;
-      padding: 10px 20px;
-      border-radius: 50px; 
-      cursor: pointer;
-      transition: background-color 0.3s ease;
+    .tag-chip {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border-subtle);
+      background: #fff;
+      color: var(--text-soft);
     }
 
-    .apply-button:hover {
-      background-color: #ff1493; 
+    /* CONTACT & DISCLAIMER */
+
+    .contact-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      gap: 14px;
     }
 
-    .button-container {
-      display: flex;
-      justify-content: center;
-      margin-top: 30px;
+    .contact-card {
+      border-radius: var(--radius-card);
+      background: var(--card);
+      border: 1px solid var(--border-subtle);
+      padding: 12px 12px 10px;
+      font-size: 13px;
+      color: var(--text-muted);
     }
 
-    button {
-      font-family: 'Montserrat', sans-serif;
-      font-size: 18px;
-      font-weight: 600;
-      color: white;
-      background-color: #ff69b4;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
+    .contact-card h4 {
+      margin: 0 0 4px;
+      font-size: 14px;
+      font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text-main);
     }
 
-    button:hover {
-      background-color: #ff1493;
+    .contact-card a {
+      color: var(--accent);
+      text-decoration: none;
     }
+
+    .contact-card a:hover {
+      text-decoration: underline;
+    }
+
+    .disclaimer {
+      margin-top: 18px;
+      border-radius: var(--radius-card);
+      background: #fff;
+      border: 1px solid var(--border-subtle);
+      padding: 10px 12px;
+      font-size: 11px;
+      color: var(--text-soft);
+    }
+
+    .disclaimer strong {
+      color: var(--text-main);
+    }
+
+    /* FOOTER */
 
     footer {
-      background-color: #ff69b4;
-      color: white;
-      text-align: center;
-      padding: 10px 0;
-      font-size: 14px;
+      border-top: 1px solid rgba(248, 187, 208, 0.95);
+      padding: 14px 20px 18px;
+      font-size: 11px;
+      color: var(--text-soft);
+      background: #fffafc;
     }
 
-    /* Media Query for Mobile Devices */
-    @media (max-width: 600px) {
-      h1 {
-        font-size: 28px;
+    .footer-inner {
+      max-width: var(--container-width);
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .footer-links a {
+      color: var(--text-soft);
+      text-decoration: none;
+    }
+
+    .footer-links a:hover {
+      color: var(--accent);
+    }
+
+    @media (max-width: 900px) {
+      .hero {
+        grid-template-columns: minmax(0, 1fr);
       }
 
-      h2 {
-        font-size: 24px;
+      .hero-card {
+        order: -1;
       }
 
-      p {
-        font-size: 16px;
+      .cards-grid-3,
+      .clients-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
-      #logo {
-        height: 50px;
+      .insights-layout,
+      .contact-grid,
+      .cards-grid-2 {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page-shell {
+        padding-inline: 16px;
       }
 
-      button {
-        font-size: 16px;
-        padding: 10px 20px;
+      .cards-grid-3,
+      .clients-grid {
+        grid-template-columns: minmax(0, 1fr);
       }
 
-      .job-card {
+      .hero-actions {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: stretch;
       }
 
-      .apply-button-container {
-        width: 100%; 
-        margin-top: 10px;
-        text-align: right;
-      }
-
-      .apply-button {
-        font-size: 14px;
-        padding: 8px 16px;
-        margin-left: 0;
+      .primary-btn,
+      .ghost-btn {
+        justify-content: center;
       }
     }
   </style>
 </head>
 <body>
-  <!-- Google Tag Manager (noscript) -->
-  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NQZVVDDP" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-  <!-- End Google Tag Manager (noscript) -->
-  
   {% include 'nav.html' %}
-  
-  <div id="container">
-    <div class="header">
-      <img id="logo" src="{{ url_for('static', filename='logo.jpg') }}" alt="FMJ Capitals Logo">
-      <h1>FMJ Capitals Careers</h1>
-    </div>
-    
-    <img id="banner" src="{{ url_for('static', filename='image1.jpg') }}" alt="Career Opportunities at FMJ Capitals">
-    
-    <h2>About FMJ Careers</h2>
-    <p>
-      At FMJ, we see investing differently. Today's financial system is complex, exclusive, and expensive - making it hard for the typical person to start investing.
-      <br><br>
-      So, we're building a platform without digital walls and complex barriers. A platform that empowers you to see new possibilities for your money - and helps make them a reality.
-    </p>
 
-    <h2>Open Positions</h2>
-    <div>
-      {% for job in jobs %}
-        {% include 'jobitem.html' %}
-      {% endfor %}
+  <main>
+    <div class="page-shell">
+      <!-- HERO -->
+      <section id="top" class="hero">
+        <div>
+          <div class="hero-pill">
+            <span class="hero-pill-dot"></span>
+            FMJ Capitals · Investment firm
+          </div>
+          <h1 class="hero-title">
+            Institutional-style investing,
+            <span class="hero-highlight">designed for real people.</span>
+          </h1>
+          <p class="hero-subtitle">
+            FMJ Capitals is an investment management and advisory firm focused on research-driven,
+            risk-aware portfolios and clear communication, so clients can commit to the long term.
+          </p>
+
+          <div class="hero-checklist">
+            <div class="hero-check-item">
+              <div class="hero-check-icon">✓</div>
+              <span>Disciplined, fundamentals-first frameworks</span>
+            </div>
+            <div class="hero-check-item">
+              <div class="hero-check-icon">✓</div>
+              <span>Transparent mandates & reporting</span>
+            </div>
+            <div class="hero-check-item">
+              <div class="hero-check-icon">✓</div>
+              <span>Support for serious, long-term investors</span>
+            </div>
+          </div>
+
+          <div class="hero-actions">
+            <a href="mailto:support@fmjcareers.com?subject=FMJ%20Capitals%20-%20Investment%20Enquiry"
+               class="primary-btn">
+              Talk to our team <span>↗</span>
+            </a>
+            <a href="#solutions" class="ghost-btn">
+              View investment solutions
+            </a>
+          </div>
+
+          <p class="hero-footnote">
+            All investing involves risk, including the possible loss of principal. Nothing on this website
+            is investment advice or a recommendation to buy or sell any security.
+          </p>
+        </div>
+
+        <aside class="hero-card" aria-label="Investment snapshot">
+          <div class="hero-card-figure">
+            <img src="{{ url_for('static', filename='image1.jpg') }}"
+                 alt="FMJ Capitals abstract investment visual">
+          </div>
+          <div class="hero-metrics">
+            <div class="hero-metric">
+              <strong>Research-driven process</strong>
+              A written, repeatable framework instead of headline-driven decisions.
+            </div>
+            <div class="hero-metric">
+              <strong>Aligned with clients</strong>
+              Clear risk profiles, mandates and review schedules agreed upfront.
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <!-- ABOUT -->
+      <section id="about" class="section">
+        <div class="section-header">
+          <div>
+            <div class="section-kicker">Firm overview</div>
+            <h2 class="section-title">Who we are</h2>
+          </div>
+          <p class="section-subtitle">
+            FMJ Capitals partners with individuals, professionals and institutions that want structure,
+            transparency and a realistic approach to markets.
+          </p>
+        </div>
+
+        <div class="cards-grid-3">
+          <article class="info-card">
+            <div class="info-card-label">Philosophy</div>
+            <h3 class="info-card-title">Process over predictions</h3>
+            <p class="info-card-body">
+              Markets are noisy. We focus on asset allocation, risk and behaviour – not trying to guess the next headline.
+            </p>
+            <ul class="info-card-list">
+              <li>Documented, repeatable investment process</li>
+              <li>Focus on risk, drawdowns and liquidity</li>
+              <li>Built to support long-term compounding</li>
+            </ul>
+          </article>
+
+          <article class="info-card">
+            <div class="info-card-label">How we work</div>
+            <h3 class="info-card-title">Partnership & transparency</h3>
+            <p class="info-card-body">
+              We aim to be a long-term partner, not a product. That means honest conversations and clear expectations.
+            </p>
+            <ul class="info-card-list">
+              <li>Clarity on mandates and constraints</li>
+              <li>Simple, transparent fee structures</li>
+              <li>Regular portfolio and risk reviews</li>
+            </ul>
+          </article>
+
+          <article class="info-card">
+            <div class="info-card-label">Focus</div>
+            <h3 class="info-card-title">Preserve, then grow</h3>
+            <p class="info-card-body">
+              We seek to balance protection of capital with the need for growth, anchored in your time horizon.
+            </p>
+            <ul class="info-card-list">
+              <li>Risk-aware portfolio construction</li>
+              <li>Diversified sources of return</li>
+              <li>Encouraging clients to stay invested</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <!-- SOLUTIONS -->
+      <section id="solutions" class="section">
+        <div class="section-header">
+          <div>
+            <div class="section-kicker">Investment solutions</div>
+            <h2 class="section-title">How we can work with you</h2>
+          </div>
+          <p class="section-subtitle">
+            Flexible ways to engage, depending on whether you want a fully managed portfolio or structured guidance.
+          </p>
+        </div>
+
+        <div class="cards-grid-3">
+          <article class="info-card">
+            <div class="info-card-label">Core offering</div>
+            <h3 class="info-card-title">Managed portfolios</h3>
+            <p class="info-card-body">
+              Multi-asset portfolios designed around your objectives, risk profile and time horizon.
+            </p>
+            <ul class="info-card-list">
+              <li>Risk-profiled model portfolios</li>
+              <li>Strategic & tactical asset allocation</li>
+              <li>Ongoing monitoring and rebalancing</li>
+            </ul>
+          </article>
+
+          <article class="info-card">
+            <div class="info-card-label">Income & stability</div>
+            <h3 class="info-card-title">Income-focused strategies</h3>
+            <p class="info-card-body">
+              For investors prioritising income and capital stability over aggressive growth.
+            </p>
+            <ul class="info-card-list">
+              <li>Quality-oriented income strategies</li>
+              <li>Emphasis on resilience and liquidity</li>
+              <li>Drawdown-sensitive risk management</li>
+            </ul>
+          </article>
+
+          <article class="info-card">
+            <div class="info-card-label">Advisory</div>
+            <h3 class="info-card-title">Portfolio reviews & guidance</h3>
+            <p class="info-card-body">
+              For hands-on investors who value a framework and a second opinion on their portfolio.
+            </p>
+            <ul class="info-card-list">
+              <li>Portfolio diagnostics and stress tests</li>
+              <li>Risk and position-sizing frameworks</li>
+              <li>Educational sessions and playbooks</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <!-- PROCESS -->
+      <section id="process" class="section">
+        <div class="section-header">
+          <div>
+            <div class="section-kicker">Investment process</div>
+            <h2 class="section-title">From conversation to implementation</h2>
+          </div>
+          <p class="section-subtitle">
+            A clear, documented process helps remove emotion from decisions and keeps everyone aligned.
+          </p>
+        </div>
+
+        <div class="cards-grid-4 cards-grid-2">
+          <div class="cards-grid-2" style="grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px;">
+            <article class="info-card">
+              <div class="info-card-label">Step 1</div>
+              <h3 class="info-card-title">Discover</h3>
+              <p class="info-card-body">
+                Understand your objectives, constraints, risk tolerance, liquidity needs and time frames.
+              </p>
+            </article>
+            <article class="info-card">
+              <div class="info-card-label">Step 2</div>
+              <h3 class="info-card-title">Design</h3>
+              <p class="info-card-body">
+                Build a strategic allocation and risk budget consistent with your goals.
+              </p>
+            </article>
+            <article class="info-card">
+              <div class="info-card-label">Step 3</div>
+              <h3 class="info-card-title">Implement</h3>
+              <p class="info-card-body">
+                Deploy capital with discipline, focusing on execution and costs.
+              </p>
+            </article>
+            <article class="info-card">
+              <div class="info-card-label">Step 4</div>
+              <h3 class="info-card-title">Monitor</h3>
+              <p class="info-card-body">
+                Ongoing monitoring, rebalancing and scheduled reviews to keep you on track.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- WHO WE SERVE -->
+      <section id="clients" class="section">
+        <div class="section-header">
+          <div>
+            <div class="section-kicker">Who we serve</div>
+            <h2 class="section-title">Built for serious investors</h2>
+          </div>
+          <p class="section-subtitle">
+            We work best with clients who value structure, communication and a long-term mindset.
+          </p>
+        </div>
+
+        <div class="clients-grid">
+          <article class="client-card">
+            <h4>Individuals & families</h4>
+            <p>
+              Managing long-term wealth, planning for education, retirement and intergenerational goals.
+            </p>
+          </article>
+          <article class="client-card">
+            <h4>Professionals & founders</h4>
+            <p>
+              Balancing business or career risk with a portfolio that supports stability and future plans.
+            </p>
+          </article>
+          <article class="client-card">
+            <h4>Entities & groups</h4>
+            <p>
+              Supporting companies, investment clubs and other entities that require documentation and reporting.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <!-- INSIGHTS -->
+      <section id="insights" class="section">
+        <div class="section-header">
+          <div>
+            <div class="section-kicker">Insights</div>
+            <h2 class="section-title">Helping clients stay grounded</h2>
+          </div>
+          <p class="section-subtitle">
+            We focus on simple, practical frameworks so clients can ignore noise and stay with their plan.
+          </p>
+        </div>
+
+        <div class="insights-layout">
+          <div class="insights-list">
+            <article class="insight-item">
+              <div class="insight-kicker">Foundations</div>
+              <div class="insight-title">Why a written investment plan matters more than forecasts</div>
+              <div class="insight-meta">Concept · Process & behaviour</div>
+            </article>
+            <article class="insight-item">
+              <div class="insight-kicker">Risk</div>
+              <div class="insight-title">Thinking in ranges instead of single-point predictions</div>
+              <div class="insight-meta">Concept · Risk management</div>
+            </article>
+            <article class="insight-item">
+              <div class="insight-kicker">Implementation</div>
+              <div class="insight-title">Rebalancing and staying invested through market cycles</div>
+              <div class="insight-meta">Concept · Portfolio design</div>
+            </article>
+          </div>
+
+          <aside class="insights-cta-card">
+            <h4>Notes & client updates</h4>
+            <p>
+              We periodically share commentary and educational notes designed for clients and serious prospects.
+            </p>
+            <p style="margin-bottom: 6px;">
+              To receive future updates, send us an email with a short note about your objectives and interest in FMJ Capitals.
+            </p>
+            <a href="mailto:support@fmjcareers.com?subject=FMJ%20Capitals%20-%20Insights%20Updates"
+               class="ghost-btn"
+               style="padding-inline:12px;margin-top:4px;">
+              Request updates
+            </a>
+
+            <div class="tag-row">
+              <span class="tag-chip">Risk & behaviour</span>
+              <span class="tag-chip">Long-term mindset</span>
+              <span class="tag-chip">Portfolio structure</span>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- CONTACT -->
+      <section id="contact" class="section">
+        <div class="section-header">
+          <div>
+            <div class="section-kicker">Contact</div>
+            <h2 class="section-title">Speak with FMJ Capitals</h2>
+          </div>
+          <p class="section-subtitle">
+            If you’re a serious long-term investor and want to explore working with us, we’d be glad to learn more.
+          </p>
+        </div>
+
+        <div class="contact-grid">
+          <div class="contact-card">
+            <h4>Prospective clients</h4>
+            <p>
+              For investment enquiries, please email:
+              <br>
+              <a href="mailto:support@fmjcareers.com?subject=FMJ%20Capitals%20-%20Investment%20Enquiry">
+                support@fmjcareers.com
+              </a>
+            </p>
+            <p>
+              It’s helpful to share whether you are an individual, professional, founder or institution,
+              your rough time horizon, and your main objectives.
+            </p>
+          </div>
+
+          <div class="contact-card">
+            <h4>Existing clients & general enquiries</h4>
+            <p>
+              For updates, support or general questions:
+              <br>
+              <a href="mailto:support@fmjcareers.com">
+                support@fmjcareers.com
+              </a>
+            </p>
+            <p>
+              We aim to respond as soon as reasonably possible on business days.
+            </p>
+          </div>
+        </div>
+
+        <div class="disclaimer">
+          <strong>Important information:</strong>
+          This website is for general information only and does not constitute investment, legal or tax advice,
+          or an offer or solicitation to buy or sell any financial instrument. Any investment strategy involves risk,
+          including the potential loss of principal. Past performance is not a reliable indicator of future results.
+          You should consider your own circumstances and seek independent professional advice before making any
+          investment decision.
+        </div>
+      </section>
     </div>
-    
-    <div class="button-container">
-      <button onclick="window.location.href='mailto:support@fmjcareers.com'" class="contact-link">Contact Us</button>
-    </div>
-  </div>
-  
+  </main>
+
   <footer>
-    © 2024, FMJ Capitals (v.1.6)
+    <div class="footer-inner">
+      <div>© 2025 FMJ Capitals. All rights reserved.</div>
+      <div class="footer-links">
+        <a href="#top">Back to top</a>
+        <span>·</span>
+        <a href="/careers">Careers</a>
+      </div>
+    </div>
   </footer>
 </body>
 </html>
