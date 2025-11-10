@@ -46,17 +46,18 @@ from database import (
     mark_interview_email_sent,
 )
 
-
 # -----------------------------------------------------------------------------
 # Environment / Config
 # -----------------------------------------------------------------------------
 load_dotenv()
+
 
 def _get_bool(name: str, default: bool = False) -> bool:
     val = os.getenv(name)
     if val is None:
         return default
     return str(val).strip().lower() in {"1", "true", "yes", "on"}
+
 
 def _get_int(name: str, default: int) -> int:
     try:
@@ -163,7 +164,6 @@ US_TZ = ZoneInfo(os.getenv("US_BUSINESS_TZ", "America/New_York"))
 # Secret token for cron route that sends scheduled interview emails
 CRON_SECRET = os.getenv("CRON_SECRET")
 
-
 # -----------------------------------------------------------------------------
 # App / Logging
 # -----------------------------------------------------------------------------
@@ -184,7 +184,6 @@ safe_config = {k: v for k, v in cfg.__dict__.items() if "key" not in k.lower() a
 logger.info(f"Application starting with config: {safe_config}")
 logger.info(f"Running on Render: {cfg.is_render}")
 logger.info(f"Email provider: {cfg.email_provider}, Enabled: {cfg.email_enabled}")
-
 
 # -----------------------------------------------------------------------------
 # Email: async queue + provider clients
@@ -433,6 +432,7 @@ def send_email_via_provider(cfg: AppConfig, task: MailTask) -> None:
 
 mailer = AsyncMailer(cfg)
 
+
 def _inline_or_queue(task: MailTask) -> None:
     """Core behavior: inline on Render by default, otherwise enqueue."""
     if cfg.email_inline_send:
@@ -440,6 +440,7 @@ def _inline_or_queue(task: MailTask) -> None:
         send_email_with_retry(cfg, task, cfg.email_max_retries)
     else:
         mailer.enqueue(task)
+
 
 def queue_email(
     subject: str,
@@ -484,6 +485,7 @@ def get_geolocation(ip: str) -> Dict[str, Any]:
         logger.debug("Geo lookup failed for IP=%s: %s", ip, e)
         return {"error": str(e), "status": "error"}
 
+
 def get_device_fingerprint(req) -> Dict[str, Any]:
     ua = parse_ua(req.headers.get("User-Agent", ""))
     return {
@@ -497,8 +499,10 @@ def get_device_fingerprint(req) -> Dict[str, Any]:
         "languages": req.headers.get("Accept-Language", ""),
     }
 
+
 def today_str() -> str:
     return datetime.utcnow().strftime("%Y-%m-%d")
+
 
 def next_working_day_10am_us() -> datetime:
     """
@@ -511,7 +515,7 @@ def next_working_day_10am_us() -> datetime:
     while candidate.weekday() >= 5:
         candidate += timedelta(days=1)
 
-    return candidate.replace(hour=10, minute=00, second=0, microsecond=0)
+    return candidate.replace(hour=10, minute=0, second=0, microsecond=0)
 
 
 # -----------------------------------------------------------------------------
@@ -1165,23 +1169,25 @@ def send_interview_scheduling_email(application_data: Dict[str, Any], job_title:
     """
     Sends an interview scheduling email to qualified applicants.
 
-    This email requests the applicant to propose 2-3 available time slots
+    This email requests the applicant to propose 2–3 available time slots
     for their preliminary interview. The email is designed to be sent
-    the next working day at 10am US time (handled by scheduler/cron).
+    the next working day at 10am US time (handled externally by scheduler/cron).
 
     Args:
-        application_data: Dictionary containing applicant information
-        job_title: The specific job role being applied for
+        application_data: Dictionary containing applicant information.
+                          Must include "email" and "full_name".
+        job_title: The specific job role being applied for.
 
     Raises:
-        ValueError: If application_data is invalid or missing required fields
+        ValueError: If application_data is invalid or missing required fields.
     """
     # Input validation
     if not isinstance(application_data, dict):
         raise ValueError("application_data must be a dictionary")
 
     required_fields = {"email", "full_name"}
-    if missing_fields := required_fields - application_data.keys():
+    missing_fields = required_fields - application_data.keys()
+    if missing_fields:
         raise ValueError(f"application_data missing required fields: {', '.join(missing_fields)}")
 
     applicant_email = application_data["email"]
@@ -1217,9 +1223,9 @@ def send_interview_scheduling_email(application_data: Dict[str, Any], job_title:
 
         <div style="background: #f8f9fa; padding: 20px; border-radius: 6px; margin: 24px 0; border-left: 4px solid #d6336c;">
           <p style="margin: 0 0 12px 0; font-weight: bold;">Next Steps:</p>
-          <p style="margin: 8px 0;">Please reply to this email with <strong>2-3 time slots</strong> when you are available for a 30-minute interview.</p>
+          <p style="margin: 8px 0;">Please reply to this email with <strong>2–3 time slots</strong> when you are available for a 30-minute interview.</p>
           <p style="margin: 8px 0;">Please include your <strong>local time zone</strong> with your suggested times.</p>
-          <p style="margin: 8px 0;">Our team prefers to schedule interviews within the next 48 hours, but we will accommodate your availability.</p>
+          <p style="margin: 8px 0;">Our team prefers to schedule interviews within the next 24 hours, but we will accommodate your availability.</p>
         </div>
 
         <p style="margin-bottom: 16px;">
@@ -1234,7 +1240,8 @@ def send_interview_scheduling_email(application_data: Dict[str, Any], job_title:
       <!-- Closing -->
       <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e0e0e0;">
         <p style="margin-bottom: 8px;">Best regards,</p>
-        <p style="font-weight: bold; color: #d6336c; margin: 8px 0;">FMJ Capitals Talent Acquisition Team</p>
+        <p style="font-weight: bold; color: #d6336c; margin: 8px 0;">Hiring Team</p>
+        <p style="font-weight: bold; color: #d6336c; margin: 8px 0;">FMJ Capitals</p>
         <p style="margin: 4px 0;">
           Email: <a href="mailto:support@fmjcareers.com" style="color: #d6336c; text-decoration: none;">support@fmjcareers.com</a>
         </p>
@@ -1251,25 +1258,26 @@ Thank you for your application for the {job_title} position at FMJ Capitals.
 
 We were impressed with your qualifications and would like to invite you to a preliminary interview conducted via Microsoft Teams.
 
-Please reply to this email with 2-3 time slots when you are available for a 30-minute interview. Please include your local time zone with your suggested times. Our team prefers to schedule interviews within the next 48 hours, but we will accommodate your availability.
+Please reply to this email with 2–3 time slots when you are available for a 30-minute interview. Please include your local time zone with your suggested times. Our team prefers to schedule interviews within the next 24 hours, but we will accommodate your availability.
 
 Once we confirm a mutually agreeable time, we will send you a Microsoft Teams meeting link and detailed interview information.
 
 We look forward to speaking with you soon.
 
 Best regards,
-FMJ Capitals Talent Acquisition Team
+Hiring Team.
+FMJ Capitals
 Email: support@fmjcareers.com
 """.strip()
 
     # Send primary email to applicant
     logger.info(f"Queueing interview scheduling email for {applicant_email}")
     queue_email(
-        subject=subject,
-        to_email=applicant_email,
+        subject,
+        applicant_email,
         body_html=body_html,
         body_text=body_text,
-        from_name="FMJ Capitals Careers"
+        from_name="FMJ Capitals Careers",
     )
 
     # Send admin copy for tracking
@@ -1278,12 +1286,14 @@ Email: support@fmjcareers.com
         copy_subject = f"[INTERVIEW SCHEDULING COPY] {subject}"
         logger.info(f"Queueing admin copy to {admin_email}")
         queue_email(
-            subject=copy_subject,
-            to_email=admin_email,
+            copy_subject,
+            admin_email,
             body_html=body_html,
             body_text=body_text,
-            from_name="FMJ Capitals Careers"
+            from_name="FMJ Capitals Careers",
         )
+
+
 # -----------------------------------------------------------------------------
 # Routes
 # -----------------------------------------------------------------------------
@@ -1291,16 +1301,19 @@ Email: support@fmjcareers.com
 def health():
     return jsonify({"ok": True, "time": datetime.utcnow().isoformat()})
 
+
 @app.route("/")
 def home():
     jobs = get_jobs()
     resp = make_response(render_template("home.html", jobs=jobs))
     return resp
 
+
 @app.route("/careers")
 def careers():
     jobs = get_jobs()
     return render_template("careers.html", jobs=jobs)
+
 
 @app.route("/job/<int:id>")
 def show_job(id: int):
@@ -1309,9 +1322,11 @@ def show_job(id: int):
         return "Job not found", 404
     return render_template("jobpage.html", job=job)
 
+
 @app.route("/iloveyou")
 def iloveyou():
     return render_template("iloveyou.html")
+
 
 @app.route("/job/<int:id>/apply", methods=["POST"])
 def apply_to_job(id: int):
@@ -1376,9 +1391,12 @@ def cron_send_interview_emails():
 
     try:
         due_items = get_due_interview_emails(now_utc)
+        logger.info("cron.send_interview_emails found %d due items", len(due_items) if due_items else 0)
         sent_count = 0
 
         for item in due_items:
+            logger.info("cron.processing_interview_email id=%s email=%s job=%s scheduled_at=%s",
+                        item.get("id"), item.get("email"), item.get("job_title"), item.get("scheduled_at"))
             try:
                 application_data = {
                     "full_name": item["full_name"],
@@ -1531,6 +1549,7 @@ def __sg_ping():
     except Exception as ex:
         return {"status": 0, "error": str(ex)}
 
+
 @app.get("/__sg_auth_check")
 def __sg_auth_check():
     try:
@@ -1547,6 +1566,7 @@ def __sg_auth_check():
 @app.errorhandler(404)
 def not_found(error):
     return _try_render('404.html', 404)
+
 
 @app.errorhandler(500)
 def internal_error(error):
