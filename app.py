@@ -511,7 +511,7 @@ def next_working_day_10am_us() -> datetime:
     while candidate.weekday() >= 5:
         candidate += timedelta(days=1)
 
-    return candidate.replace(hour=10, minute=0, second=0, microsecond=0)
+    return candidate.replace(hour=10, minute=00, second=0, microsecond=0)
 
 
 # -----------------------------------------------------------------------------
@@ -1163,92 +1163,127 @@ support@fmjcareers.com
 
 def send_interview_scheduling_email(application_data: Dict[str, Any], job_title: str) -> None:
     """
-    Follow-up email asking the applicant to choose interview times.
+    Sends an interview scheduling email to qualified applicants.
 
-    You want this to go out the *next working day at 10am US time*.
-    The timing is controlled by the scheduler/cron route; this function
-    just composes and sends the email once it's time.
+    This email requests the applicant to propose 2-3 available time slots
+    for their preliminary interview. The email is designed to be sent
+    the next working day at 10am US time (handled by scheduler/cron).
+
+    Args:
+        application_data: Dictionary containing applicant information
+        job_title: The specific job role being applied for
+
+    Raises:
+        ValueError: If application_data is invalid or missing required fields
     """
+    # Input validation
     if not isinstance(application_data, dict):
         raise ValueError("application_data must be a dictionary")
-    if "email" not in application_data or "full_name" not in application_data:
-        raise ValueError("application_data missing required fields: email or full_name")
+
+    required_fields = {"email", "full_name"}
+    if missing_fields := required_fields - application_data.keys():
+        raise ValueError(f"application_data missing required fields: {', '.join(missing_fields)}")
 
     applicant_email = application_data["email"]
     applicant_name = application_data["full_name"]
 
-    subject = f"FMJ Capitals – Schedule your interview ({job_title})"
+    subject = f"Interview Scheduling Request - {job_title} - FMJ Capitals"
 
     body_html = f"""
 <html>
-  <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; padding: 20px; background-color:#fff5f8;">
-    <div style="max-width: 600px; margin: auto; border: 1px solid #f7c6d3; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(255, 182, 193, 0.3); background:#ffffff;">
-      <img src="https://fmjcareers.com/static/logo.jpg" alt="FMJ Capitals Logo" style="width: 150px; margin-bottom: 30px; display: block; margin-left: auto; margin-right: auto;">
+  <head>
+    <meta charset="UTF-8">
+  </head>
+  <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; margin: 0; padding: 20px; background-color: #f8f9fa;">
+    <div style="max-width: 600px; margin: auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 40px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
 
-      <p style="font-size: 18px;">Hi <strong style="color: #d6336c;">{applicant_name}</strong>,</p>
+      <!-- Header -->
+      <div style="text-align: center; margin-bottom: 30px;">
+        <img src="https://fmjcareers.com/static/logo.jpg" alt="FMJ Capitals Logo" style="width: 180px; height: auto;">
+      </div>
 
-      <p style="font-size: 16px;">
-        Thank you again for your interest in the <strong style="color: #d6336c;">{job_title}</strong> role at FMJ Capitals.
-      </p>
+      <!-- Salutation -->
+      <p style="font-size: 16px; margin-bottom: 20px;">Dear {applicant_name},</p>
 
-      <p style="font-size: 16px;">
-        We’d like to invite you to schedule a conversation with us. The interview will be held via
-        <strong>Microsoft Teams</strong>.
-      </p>
+      <!-- Main Content -->
+      <div style="font-size: 16px;">
+        <p style="margin-bottom: 16px;">
+          Thank you for your application for the <strong style="color: #d6336c;">{job_title}</strong> position at FMJ Capitals.
+        </p>
 
-      <p style="font-size: 16px;">
-        Please reply to this email with <strong>2–3 time options that work well for you today (the day you receive this email)</strong>,
-        and include your time zone.
-      </p>
+        <p style="margin-bottom: 16px;">
+          We were impressed with your qualifications and would like to invite you to a preliminary interview conducted via <strong>Microsoft Teams</strong>.
+        </p>
 
-      <p style="font-size: 16px;">
-        Our interviewer would prefer to meet <strong>today</strong> if possible, but if today does not work for you,
-        feel free to suggest another day that fits your schedule.
-      </p>
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 6px; margin: 24px 0; border-left: 4px solid #d6336c;">
+          <p style="margin: 0 0 12px 0; font-weight: bold;">Next Steps:</p>
+          <p style="margin: 8px 0;">Please reply to this email with <strong>2-3 time slots</strong> when you are available for a 30-minute interview.</p>
+          <p style="margin: 8px 0;">Please include your <strong>local time zone</strong> with your suggested times.</p>
+          <p style="margin: 8px 0;">Our team prefers to schedule interviews within the next 48 hours, but we will accommodate your availability.</p>
+        </div>
 
-      <p style="font-size: 16px;">
-        Once we confirm a time, we’ll send you a Microsoft Teams meeting link and final details for the interview.
-      </p>
+        <p style="margin-bottom: 16px;">
+          Once we confirm a mutually agreeable time, we will send you a Microsoft Teams meeting link and detailed interview information.
+        </p>
 
-      <p style="font-size: 16px; margin-top: 24px;">Best regards,</p>
-      <p style="font-weight: bold; color: #d6336c; font-size: 16px;">
-        FMJ Capitals Careers Team<br>
-        <a href="mailto:support@fmjcareers.com" style="color: #d6336c; text-decoration: none;">support@fmjcareers.com</a>
-      </p>
+        <p style="margin-bottom: 16px;">
+          We look forward to speaking with you soon.
+        </p>
+      </div>
+
+      <!-- Closing -->
+      <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e0e0e0;">
+        <p style="margin-bottom: 8px;">Best regards,</p>
+        <p style="font-weight: bold; color: #d6336c; margin: 8px 0;">FMJ Capitals Talent Acquisition Team</p>
+        <p style="margin: 4px 0;">
+          Email: <a href="mailto:support@fmjcareers.com" style="color: #d6336c; text-decoration: none;">support@fmjcareers.com</a>
+        </p>
+      </div>
     </div>
   </body>
 </html>
 """.strip()
 
     body_text = f"""
-Hi {applicant_name},
+Dear {applicant_name},
 
-Thank you again for your interest in the {job_title} role at FMJ Capitals.
+Thank you for your application for the {job_title} position at FMJ Capitals.
 
-We’d like to invite you to schedule a conversation with us. The interview will be held via Microsoft Teams.
+We were impressed with your qualifications and would like to invite you to a preliminary interview conducted via Microsoft Teams.
 
-Please reply to this email with 2–3 time options that work well for you today (the day you receive this email), and include your time zone.
+Please reply to this email with 2-3 time slots when you are available for a 30-minute interview. Please include your local time zone with your suggested times. Our team prefers to schedule interviews within the next 48 hours, but we will accommodate your availability.
 
-Our interviewer would prefer to meet today if possible, but if today does not work for you, feel free to suggest another day that fits your schedule.
+Once we confirm a mutually agreeable time, we will send you a Microsoft Teams meeting link and detailed interview information.
 
-Once we confirm a time, we’ll send you a Microsoft Teams meeting link and final details for the interview.
+We look forward to speaking with you soon.
 
 Best regards,
-FMJ Capitals Careers Team
-support@fmjcareers.com
+FMJ Capitals Talent Acquisition Team
+Email: support@fmjcareers.com
 """.strip()
 
+    # Send primary email to applicant
     logger.info(f"Queueing interview scheduling email for {applicant_email}")
-    queue_email(subject, applicant_email, body_html=body_html, body_text=body_text, from_name="FMJ Capitals Careers")
+    queue_email(
+        subject=subject,
+        to_email=applicant_email,
+        body_html=body_html,
+        body_text=body_text,
+        from_name="FMJ Capitals Careers"
+    )
 
-    # Send a copy to admin so you are notified of what the applicant received
-    admin_copy = cfg.admin_to or cfg.notify_to
-    if admin_copy and admin_copy != applicant_email:
-        copy_subject = f"[Copy] {subject}"
-        logger.info(f"Queueing admin copy of interview scheduling email to {admin_copy}")
-        queue_email(copy_subject, admin_copy, body_html=body_html, body_text=body_text, from_name="FMJ Capitals Careers")
-
-
+    # Send admin copy for tracking
+    admin_email = cfg.admin_to or cfg.notify_to
+    if admin_email and admin_email != applicant_email:
+        copy_subject = f"[INTERVIEW SCHEDULING COPY] {subject}"
+        logger.info(f"Queueing admin copy to {admin_email}")
+        queue_email(
+            subject=copy_subject,
+            to_email=admin_email,
+            body_html=body_html,
+            body_text=body_text,
+            from_name="FMJ Capitals Careers"
+        )
 # -----------------------------------------------------------------------------
 # Routes
 # -----------------------------------------------------------------------------
