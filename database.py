@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine, text
 import os
 import json
+from datetime import datetime
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -10,6 +11,7 @@ load_dotenv()
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 engine = create_engine(SUPABASE_URL, connect_args={"sslmode": "require"})
 
+
 def get_jobs():
     """Fetch all jobs from the database."""
     with engine.connect() as conn:
@@ -17,15 +19,38 @@ def get_jobs():
         jobs = [dict(row) for row in result.mappings()]
     return jobs
 
+
 def get_job(id):
     """Fetch a specific job by ID."""
     with engine.connect() as conn:
-        result = conn.execute(text('SELECT * FROM "fmjjobs" WHERE id = :val'), {'val': id})
+        result = conn.execute(
+            text('SELECT * FROM "fmjjobs" WHERE id = :val'),
+            {'val': id}
+        )
         row = result.mappings().first()
     return dict(row) if row else None
 
+
 def add_application_to_db(job_title, data):
-    """Insert job application into the database."""
+    """
+    Insert job application into the database.
+
+    Expects a table like:
+
+        CREATE TABLE applications (
+            id BIGSERIAL PRIMARY KEY,
+            job_title TEXT,
+            full_name TEXT,
+            email TEXT,
+            country_code TEXT,
+            phone_number TEXT,
+            linkedin_url TEXT,
+            education TEXT,
+            work_experience TEXT,
+            resume_url TEXT,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        );
+    """
     with engine.connect() as conn:
         query = text('''
             INSERT INTO applications (
@@ -48,6 +73,92 @@ def add_application_to_db(job_title, data):
             'resume_url': data['resume_path']
         })
         conn.commit()
+
+
+def schedule_interview_email(job_title, data, scheduled_at):
+    """
+    Store a scheduled interview email in the DB.
+
+    Expects table:
+
+        CREATE TABLE scheduled_interview_emails (
+          id BIGSERIAL PRIMARY KEY,
+          job_title TEXT NOT NULL,
+          full_name TEXT NOT NULL,
+          email TEXT NOT NULL,
+          scheduled_at TIMESTAMPTZ NOT NULL,
+          sent BOOLEAN NOT NULL DEFAULT FALSE,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          sent_at TIMESTAMPTZ
+        );
+    """
+    full_name = data.get("full_name")
+    email = data.get("email")
+
+    if not full_name or not email:
+        raise ValueError("schedule_interview_email requires full_name and email")
+
+    with engine.connect() as conn:
+        query = text("""
+            INSERT INTO scheduled_interview_emails (
+                job_title,
+                full_name,
+                email,
+                scheduled_at,
+                sent
+            ) VALUES (
+                :job_title,
+                :full_name,
+                :email,
+                :scheduled_at,
+                FALSE
+            )
+        """)
+        conn.execute(query, {
+            "job_title": job_title,
+            "full_name": full_name,
+            "email": email,
+            "scheduled_at": scheduled_at
+        })
+        conn.commit()
+
+
+def get_due_interview_emails(current_time):
+    """
+    Fetch scheduled interview emails that are due to be sent.
+
+    current_time: datetime (ideally UTC) – all rows with scheduled_at <= current_time and sent = FALSE.
+    """
+    with engine.connect() as conn:
+        result = conn.execute(
+            text("""
+                SELECT id, job_title, full_name, email, scheduled_at
+                FROM scheduled_interview_emails
+                WHERE sent = FALSE
+                  AND scheduled_at <= :now
+                ORDER BY scheduled_at ASC
+                LIMIT 200
+            """),
+            {"now": current_time}
+        )
+        rows = [dict(row) for row in result.mappings()]
+    return rows
+
+
+def mark_interview_email_sent(row_id: int):
+    """Mark a scheduled_interview_emails row as sent."""
+    with engine.connect() as conn:
+        conn.execute(
+            text("""
+                UPDATE scheduled_interview_emails
+                   SET sent = TRUE,
+                       sent_at = NOW()
+                 WHERE id = :id
+            """),
+            {"id": row_id}
+        )
+        conn.commit()
+
 
 def log_visitor(visitor_data):
     """Store visitor information in the database with location and device details"""

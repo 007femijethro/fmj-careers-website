@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Application Submitted - FMJ Careers</title>
+    <title>Application Submitted - FMJ Capitals Careers</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Open+Sans:wght@400;600&display=swap');
 
         body {
             font-family: 'Open Sans', sans-serif;
-            background-color: #f4f4f9;
+            background-color: #fff5f8;
             color: #333;
             margin: 0;
             padding: 0;
@@ -22,83 +22,117 @@
         #container {
             max-width: 720px;
             margin: 0 auto;
-            padding: 20px 15px;
-            background: white;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
+            padding: 20px 15px 40px;
+            background: #ffffff;
+            box-shadow: 0 4px 12px rgba(236, 72, 153, 0.25);
+            border-radius: 12px;
             flex-grow: 1;
             text-align: center;
+            margin-top: 24px;
         }
 
         .header {
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-bottom: 30px;
+            margin-bottom: 24px;
         }
 
         #logo {
             height: 60px;
             margin-bottom: 10px;
+            border-radius: 999px;
         }
 
         h1 {
             font-family: 'Montserrat', sans-serif;
-            font-size: 36px;
+            font-size: 30px;
             font-weight: 600;
-            color: #2c3e50;
+            color: #b91c5c;
             margin: 0;
         }
 
         h2 {
             font-family: 'Montserrat', sans-serif;
-            font-size: 28px;
-            color: #34495e;
+            font-size: 24px;
+            color: #c2185b;
             margin-top: 0;
         }
 
         p {
-            font-size: 18px;
+            font-size: 16px;
             color: #555;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
 
-        .signal-box {
+        .info-box {
             background-color: #fff0f5;
-            border-left: 6px solid #ff69b4;
-            padding: 20px;
-            margin: 30px 0;
+            border-left: 6px solid #ec4899;
+            padding: 18px 20px;
+            margin: 24px 0;
             border-radius: 6px;
+            text-align: left;
         }
 
-        .signal-box h3 {
+        .info-box h3 {
             font-family: 'Montserrat', sans-serif;
-            color: #ff69b4;
+            color: #ec4899;
             margin-top: 0;
+            margin-bottom: 8px;
+            font-size: 18px;
         }
 
-        .signal-link {
+        .info-box p {
+            margin-bottom: 8px;
+        }
+
+        .home-link {
             display: inline-block;
-            margin-top: 10px;
-            padding: 12px 20px;
-            background-color: #ff69b4;
+            margin-top: 20px;
+            padding: 10px 18px;
+            background-color: #ec4899;
             color: white;
-            font-weight: bold;
-            border-radius: 4px;
+            font-weight: 600;
+            border-radius: 999px;
             text-decoration: none;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.2s ease;
+            font-size: 14px;
         }
 
-        .signal-link:hover {
-            background-color: #e0559f;
+        .home-link:hover {
+            background-color: #db2777;
         }
 
         footer {
-            background-color: #ff69b4;
-            color: white;
+            background-color: #ffe4f1;
+            color: #7e244f;
             text-align: center;
             padding: 10px 0;
             font-size: 14px;
+            margin-top: 24px;
+        }
+
+        @media (max-width: 600px) {
+            #container {
+                margin-top: 16px;
+                border-radius: 0;
+            }
+
+            h1 {
+                font-size: 26px;
+            }
+
+            h2 {
+                font-size: 22px;
+            }
+
+            p {
+                font-size: 15px;
+            }
+
+            .info-box {
+                padding: 16px;
+            }
         }
     </style>
 </head>
@@ -107,31 +141,45 @@
 
     <div id="container">
         <div class="header">
-            <img id="logo" src="../../static/logo.jpg" alt="Company Logo">
+            <img id="logo" src="{{ url_for('static', filename='logo.jpg') }}" alt="FMJ Capitals Logo">
             <h1>FMJ Capitals Careers</h1>
         </div>
 
         <h2>Application Submitted</h2>
         <p>Hello {{ application['full_name'] }},</p>
 
-        <p>Thank you for applying for the position of {{ job['title'] }}. Your application has been successfully submitted.</p>
+        <p>
+            Thank you for applying for the position of <strong>{{ job['title'] }}</strong>.
+            Your application has been successfully submitted.
+        </p>
 
-        <p>An email has been sent to {{ application['email'] }} with further instructions on how to proceed. If you do not see the email in your inbox shortly, please check your spam or junk folder.</p>
+        <p>
+            An email has been sent to <strong>{{ application['email'] }}</strong> confirming that we’ve received your application.
+            If you don’t see it in your inbox shortly, please check your spam or junk folder.
+        </p>
 
-        <p>We appreciate your interest and will review your application promptly.</p>
-
-
-        <div class="signal-box">
-            <h3>Connect with Our Hiring Manager</h3>
-            <p>For faster communication, kindly click the button below to connect directly via Signal Messenger:</p>
-            <a class="signal-link" href="https://signal.me/#p/+12394939137" target="_blank">
-                Message on Signal
-            </a>
+        <div class="info-box">
+            <h3>What happens next?</h3>
+            <p>
+                Our team will review your application shortly.
+            </p>
+            <p>
+                You’ll receive a follow-up email asking you to choose a time for an interview. The interview will be held via
+                <strong>Microsoft Teams</strong>.
+            </p>
         </div>
+
+        <p>
+            We appreciate your interest in joining FMJ Capitals and look forward to speaking with you.
+        </p>
+
+        <a class="home-link" href="/">
+            ← Back to FMJ Capitals
+        </a>
     </div>
 
     <footer>
-        © 2024, FMJ Capitals (v.1.5)
+        © 2025, FMJ Capitals Careers
     </footer>
 </body>
 </html>

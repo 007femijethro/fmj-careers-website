@@ -6,7 +6,7 @@ import uuid
 import logging
 import time
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional, Tuple
 from queue import Queue, Empty
 from threading import Thread
@@ -28,8 +28,23 @@ from dotenv import load_dotenv
 from email.utils import formataddr
 from user_agents import parse as parse_ua
 
+try:
+    # Python 3.9+
+    from zoneinfo import ZoneInfo
+except ImportError:  # pragma: no cover
+    # For older Python if backports.zoneinfo is installed
+    from backports.zoneinfo import ZoneInfo  # type: ignore
+
 # Your own DB helpers
-from database import get_jobs, get_job, add_application_to_db, log_visitor
+from database import (
+    get_jobs,
+    get_job,
+    add_application_to_db,
+    log_visitor,
+    schedule_interview_email,
+    get_due_interview_emails,
+    mark_interview_email_sent,
+)
 
 
 # -----------------------------------------------------------------------------
@@ -75,6 +90,8 @@ BAD_UA_RE = re.compile(
 IP_HITS = defaultdict(lambda: deque(maxlen=40))  # keep last 40 timestamps
 RATE_LIMIT_WINDOW = 10.0  # seconds
 RATE_LIMIT_MAX = 30       # >30 hits / window => 429
+
+
 @dataclass(frozen=True)
 class AppConfig:
     secret_key: str = os.getenv("SECRET_KEY", "change-this-before-prod")
@@ -84,7 +101,7 @@ class AppConfig:
     email_enabled: bool = _get_bool("EMAIL_ENABLED", True)
     email_provider: str = os.getenv("EMAIL_PROVIDER", "sendgrid").lower()  # sendgrid|mailgun|postmark|smtp
     email_address: str = os.getenv("EMAIL_ADDRESS", "")
-    from_name: str = os.getenv("FROM_NAME", "FMJ Careers")
+    from_name: str = os.getenv("FROM_NAME", "FMJ Capitals Careers")
     reply_to: Optional[str] = os.getenv("REPLY_TO") or None
     admin_to: str = os.getenv("ADMIN_TO", "")
     notify_to: str = os.getenv("NOTIFY_TO", "")
@@ -139,6 +156,13 @@ class AppConfig:
 
 
 cfg = AppConfig()
+
+# Time zone for “US time”, used for scheduling next working day at 10am
+US_TZ = ZoneInfo(os.getenv("US_BUSINESS_TZ", "America/New_York"))
+
+# Secret token for cron route that sends scheduled interview emails
+CRON_SECRET = os.getenv("CRON_SECRET")
+
 
 # -----------------------------------------------------------------------------
 # App / Logging
@@ -476,6 +500,19 @@ def get_device_fingerprint(req) -> Dict[str, Any]:
 def today_str() -> str:
     return datetime.utcnow().strftime("%Y-%m-%d")
 
+def next_working_day_10am_us() -> datetime:
+    """
+    Compute the next working day (Mon–Fri) at 10:00 in US_TZ.
+    """
+    now_local = datetime.now(US_TZ)
+    candidate = now_local + timedelta(days=1)
+
+    # 0=Monday ... 6=Sunday; skip Saturday (5) and Sunday (6)
+    while candidate.weekday() >= 5:
+        candidate += timedelta(days=1)
+
+    return candidate.replace(hour=10, minute=0, second=0, microsecond=0)
+
 
 # -----------------------------------------------------------------------------
 # Error fallback helper (prevents TemplateNotFound loops)
@@ -735,7 +772,7 @@ def send_application_notification(job_title: str, application_data: Dict[str, An
     <div class="container">
         <div class="header">
             <h1>🎯 New Job Application Received</h1>
-            <p style="margin: 10px 0 0 0; opacity: 0.9;">FMJ Careers Portal</p>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">FMJ Capitals Careers Portal</p>
         </div>
 
         <div class="content">
@@ -779,7 +816,7 @@ def send_application_notification(job_title: str, application_data: Dict[str, An
         </div>
 
         <div class="footer">
-            <p>This email was sent automatically from FMJ Careers Portal</p>
+            <p>This email was sent automatically from FMJ Capitals Careers Portal</p>
             <p>© 2025 FMJ Capitals. All rights reserved.</p>
         </div>
     </div>
@@ -787,7 +824,7 @@ def send_application_notification(job_title: str, application_data: Dict[str, An
 </html>""".strip()
 
     body_text = f"""
-NEW JOB APPLICATION - FMJ CAREERS
+NEW JOB APPLICATION - FMJ CAPITALS CAREERS
 {'='*50}
 
 Applicant: {applicant_name}
@@ -805,15 +842,15 @@ Background:
 
 Next Steps:
 1. Review the application in admin panel
-2. Contact applicant to schedule interview
+2. Contact applicant to schedule interview (via Microsoft Teams)
 3. Update application status
 
 ---
-FMJ Careers Portal - Automated Notification
+FMJ Capitals Careers Portal - Automated Notification
 """
 
     logger.info(f"Queueing application notification for {applicant_name}")
-    queue_email(subject, cfg.admin_to, body_html=body_html, body_text=body_text, from_name="FMJ Careers Portal")
+    queue_email(subject, cfg.admin_to, body_html=body_html, body_text=body_text, from_name="FMJ Capitals Careers Portal")
 
 
 def send_visitor_notification(visitor_data: Dict[str, Any]) -> None:
@@ -945,7 +982,7 @@ def send_visitor_notification(visitor_data: Dict[str, Any]) -> None:
     <div class="container">
         <div class="header">
             <h1>{visitor_icon} {visitor_type}</h1>
-            <p style="margin: 10px 0 0 0; opacity: 0.9;">FMJ Careers Analytics</p>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">FMJ Capitals Careers Analytics</p>
         </div>
 
         <div class="content">
@@ -1012,7 +1049,7 @@ def send_visitor_notification(visitor_data: Dict[str, Any]) -> None:
         </div>
 
         <div class="footer">
-            <p>🌐 Real-time analytics from FMJ Careers website</p>
+            <p>🌐 Real-time analytics from FMJ Capitals Careers website</p>
             <p>© 2025 FMJ Capitals. All rights reserved.</p>
         </div>
     </div>
@@ -1020,7 +1057,7 @@ def send_visitor_notification(visitor_data: Dict[str, Any]) -> None:
 </html>""".strip()
 
     body_text = f"""
-VISITOR ANALYTICS - FMJ CAREERS
+VISITOR ANALYTICS - FMJ CAPITALS CAREERS
 {'='*50}
 
 {visitor_icon} {visitor_type}
@@ -1043,13 +1080,19 @@ Engagement:
 🌐 Languages: {visitor_data.get('device', {}).get('languages', 'Not detected')}
 
 ---
-FMJ Careers Analytics - Automated Report
+FMJ Capitals Careers Analytics - Automated Report
 """
 
-    queue_email(subject, cfg.notify_to, body_html=body_html, body_text=body_text, from_name="FMJ Careers Analytics")
+    queue_email(subject, cfg.notify_to, body_html=body_html, body_text=body_text, from_name="FMJ Capitals Careers Analytics")
 
 
 def send_applicant_confirmation_email(application_data: Dict[str, Any], job_title: str) -> None:
+    """
+    Immediate email after application:
+    - Thanks them for applying
+    - Tells them you'll follow up by email to schedule an interview via Microsoft Teams
+    - You also receive a copy of this email.
+    """
     if not isinstance(application_data, dict):
         raise ValueError("application_data must be a dictionary")
     if "email" not in application_data or "full_name" not in application_data:
@@ -1058,65 +1101,152 @@ def send_applicant_confirmation_email(application_data: Dict[str, Any], job_titl
     applicant_email = application_data["email"]
     applicant_name = application_data["full_name"]
 
-    subject = f"Your Application for {job_title} has been received"
+    subject = f"FMJ Capitals – Application received for {job_title}"
+
     body_html = f"""
 <html>
-  <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; padding: 20px;">
-    <div style="max-width: 600px; margin: auto; border: 1px solid #f7c6d3; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(255, 182, 193, 0.3);">
+  <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; padding: 20px; background-color:#fff5f8;">
+    <div style="max-width: 600px; margin: auto; border: 1px solid #f7c6d3; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(255, 182, 193, 0.3); background:#ffffff;">
       <img src="https://fmjcareers.com/static/logo.jpg" alt="FMJ Capitals Logo" style="width: 150px; margin-bottom: 30px; display: block; margin-left: auto; margin-right: auto;">
 
       <p style="font-size: 18px;">Hi <strong style="color: #d6336c;">{applicant_name}</strong>,</p>
 
-      <p style="font-size: 16px; color: #6a1b4d;">Thank you for applying for the <strong style="color: #d6336c;">{job_title}</strong> position with us!</p>
+      <p style="font-size: 16px; color: #6a1b4d;">
+        Thank you for applying for the <strong style="color: #d6336c;">{job_title}</strong> position at FMJ Capitals.
+      </p>
 
-      <p style="font-size: 16px;">We’ve received your information and are currently reviewing applications. To move forward and schedule your interview, please follow the steps below:</p>
+      <p style="font-size: 16px;">
+        We’ve received your application and our team will review it shortly.
+      </p>
 
-      <h3 style="color: #d6336c; border-bottom: 2px solid #f28ab2; padding-bottom: 8px;">✅ Next Steps – Required for Interview Scheduling:</h3>
-      <ol style="color: #6a1b4d; font-size: 15px;">
-        <li style="margin-bottom: 15px;">
-          <strong>Download the Signal Messenger App (Free & Secure):</strong><br>
-          Signal is our secure communication platform for interviews. Please download it here:<br>
-          <a href="https://signal.org/download/" style="color: #d6336c; text-decoration: none;">Signal for Desktop & Mobile</a>
-        </li>
-        <li style="margin-bottom: 15px;">
-          <strong>Once Installed, Message Our Hiring Manager:</strong><br>
-          <em>Aaron Thomas</em><br>
-          Signal Number: <em>2394939137</em><br>
-          Message Template:<br><br>
-          <blockquote style="background-color: #ffd6e8; border-left: 4px solid #d6336c; margin: 0; padding: 12px 16px; font-style: italic; color: #a31545;">
-            Hi, my name is {applicant_name}. I applied for the {job_title} position and I’m ready to schedule my interview.
-          </blockquote>
-        </li>
-        <li>
-          We’ll schedule your interview via Signal within <strong>24–48 hours</strong>.
-        </li>
-      </ol>
+      <p style="font-size: 16px;">
+        We’ll follow up with you by email to schedule an interview, which will be held via <strong>Microsoft Teams</strong>.
+      </p>
 
-      <h4 style="color: #d6336c; margin-top: 30px;">🔍 What to Expect After Messaging:</h4>
-      <ul style="color: #6a1b4d; font-size: 15px;">
-        <li>We’ll confirm your availability and verify a few details</li>
-        <li>You’ll receive remote training if hired</li>
-        <li>We’ll ship a company laptop and your credentials directly to your address</li>
-      </ul>
+      <p style="font-size: 16px;">
+        For now, there’s nothing else you need to do. We’ll be in touch with next steps.
+      </p>
 
-      <p style="font-size: 16px;">If you have any questions in the meantime, feel free to reply to this email.</p>
-
-      <p style="font-size: 16px;">Thanks again — we look forward to hearing from you!</p>
-
-      <br>
-
-      <p style="font-size: 16px;">Best regards,</p>
-      <p style="font-weight: bold; color: #d6336c; font-size: 16px;">Aaron Thomas<br>
-         Hiring Coordinator<br>
-         FMJ Capitals<br>
-         <a href="mailto:aaronthomas@fmjcareers.com" style="color: #d6336c; text-decoration: none;">aaronthomas@fmjcareers.com</a></p>
+      <p style="font-size: 16px; margin-top: 24px;">Best regards,</p>
+      <p style="font-weight: bold; color: #d6336c; font-size: 16px;">
+        FMJ Capitals Careers Team<br>
+        <a href="mailto:support@fmjcareers.com" style="color: #d6336c; text-decoration: none;">support@fmjcareers.com</a>
+      </p>
     </div>
   </body>
 </html>
 """.strip()
 
+    body_text = f"""
+Hi {applicant_name},
+
+Thank you for applying for the {job_title} position at FMJ Capitals.
+
+We’ve received your application and our team will review it shortly.
+We’ll follow up with you by email to schedule an interview, which will be held via Microsoft Teams.
+
+Best regards,
+FMJ Capitals Careers Team
+support@fmjcareers.com
+""".strip()
+
     logger.info(f"Queueing confirmation email for {applicant_email}")
-    queue_email(subject, applicant_email, body_html=body_html, from_name="FMJ Careers")
+    queue_email(subject, applicant_email, body_html=body_html, body_text=body_text, from_name="FMJ Capitals Careers")
+
+    # Send a copy to admin so you are notified of what the applicant received
+    admin_copy = cfg.admin_to or cfg.notify_to
+    if admin_copy and admin_copy != applicant_email:
+        copy_subject = f"[Copy] {subject}"
+        logger.info(f"Queueing admin copy of confirmation email to {admin_copy}")
+        queue_email(copy_subject, admin_copy, body_html=body_html, body_text=body_text, from_name="FMJ Capitals Careers")
+
+
+def send_interview_scheduling_email(application_data: Dict[str, Any], job_title: str) -> None:
+    """
+    Follow-up email asking the applicant to choose interview times.
+
+    You want this to go out the *next working day at 10am US time*.
+    The timing is controlled by the scheduler/cron route; this function
+    just composes and sends the email once it's time.
+    """
+    if not isinstance(application_data, dict):
+        raise ValueError("application_data must be a dictionary")
+    if "email" not in application_data or "full_name" not in application_data:
+        raise ValueError("application_data missing required fields: email or full_name")
+
+    applicant_email = application_data["email"]
+    applicant_name = application_data["full_name"]
+
+    subject = f"FMJ Capitals – Schedule your interview ({job_title})"
+
+    body_html = f"""
+<html>
+  <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; padding: 20px; background-color:#fff5f8;">
+    <div style="max-width: 600px; margin: auto; border: 1px solid #f7c6d3; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(255, 182, 193, 0.3); background:#ffffff;">
+      <img src="https://fmjcareers.com/static/logo.jpg" alt="FMJ Capitals Logo" style="width: 150px; margin-bottom: 30px; display: block; margin-left: auto; margin-right: auto;">
+
+      <p style="font-size: 18px;">Hi <strong style="color: #d6336c;">{applicant_name}</strong>,</p>
+
+      <p style="font-size: 16px;">
+        Thank you again for your interest in the <strong style="color: #d6336c;">{job_title}</strong> role at FMJ Capitals.
+      </p>
+
+      <p style="font-size: 16px;">
+        We’d like to invite you to schedule a conversation with us. The interview will be held via
+        <strong>Microsoft Teams</strong>.
+      </p>
+
+      <p style="font-size: 16px;">
+        Please reply to this email with <strong>2–3 time options that work well for you today (the day you receive this email)</strong>,
+        and include your time zone.
+      </p>
+
+      <p style="font-size: 16px;">
+        Our interviewer would prefer to meet <strong>today</strong> if possible, but if today does not work for you,
+        feel free to suggest another day that fits your schedule.
+      </p>
+
+      <p style="font-size: 16px;">
+        Once we confirm a time, we’ll send you a Microsoft Teams meeting link and final details for the interview.
+      </p>
+
+      <p style="font-size: 16px; margin-top: 24px;">Best regards,</p>
+      <p style="font-weight: bold; color: #d6336c; font-size: 16px;">
+        FMJ Capitals Careers Team<br>
+        <a href="mailto:support@fmjcareers.com" style="color: #d6336c; text-decoration: none;">support@fmjcareers.com</a>
+      </p>
+    </div>
+  </body>
+</html>
+""".strip()
+
+    body_text = f"""
+Hi {applicant_name},
+
+Thank you again for your interest in the {job_title} role at FMJ Capitals.
+
+We’d like to invite you to schedule a conversation with us. The interview will be held via Microsoft Teams.
+
+Please reply to this email with 2–3 time options that work well for you today (the day you receive this email), and include your time zone.
+
+Our interviewer would prefer to meet today if possible, but if today does not work for you, feel free to suggest another day that fits your schedule.
+
+Once we confirm a time, we’ll send you a Microsoft Teams meeting link and final details for the interview.
+
+Best regards,
+FMJ Capitals Careers Team
+support@fmjcareers.com
+""".strip()
+
+    logger.info(f"Queueing interview scheduling email for {applicant_email}")
+    queue_email(subject, applicant_email, body_html=body_html, body_text=body_text, from_name="FMJ Capitals Careers")
+
+    # Send a copy to admin so you are notified of what the applicant received
+    admin_copy = cfg.admin_to or cfg.notify_to
+    if admin_copy and admin_copy != applicant_email:
+        copy_subject = f"[Copy] {subject}"
+        logger.info(f"Queueing admin copy of interview scheduling email to {admin_copy}")
+        queue_email(copy_subject, admin_copy, body_html=body_html, body_text=body_text, from_name="FMJ Capitals Careers")
 
 
 # -----------------------------------------------------------------------------
@@ -1131,7 +1261,7 @@ def home():
     jobs = get_jobs()
     resp = make_response(render_template("home.html", jobs=jobs))
     return resp
-    
+
 @app.route("/careers")
 def careers():
     jobs = get_jobs()
@@ -1168,11 +1298,22 @@ def apply_to_job(id: int):
     logger.info(f"Processing application for job {id}: {data.get('full_name')}")
 
     try:
+        # Store application immediately
         add_application_to_db(job["title"], data)
 
-        # Queue emails (non-blocking / inline depending on config)
-        send_application_notification(job["title"], data)
-        send_applicant_confirmation_email(data, job["title"])
+        # Immediate emails
+        send_application_notification(job["title"], data)          # to admin
+        send_applicant_confirmation_email(data, job["title"])      # to applicant (+ admin copy)
+
+        # Schedule interview email for next working day 10am US time
+        scheduled_local = next_working_day_10am_us()
+        scheduled_utc = scheduled_local.astimezone(timezone.utc)
+        schedule_interview_email(job["title"], data, scheduled_utc)
+
+        logger.info(
+            "Interview scheduling email queued in DB for %s at %s (UTC)",
+            data.get("email"), scheduled_utc.isoformat()
+        )
 
         logger.info(f"Application processed successfully for {data.get('full_name')}")
         return render_template("applicationsubmited.html", application=data, job=job)
@@ -1180,6 +1321,50 @@ def apply_to_job(id: int):
     except Exception as e:
         logger.exception(f"Application handling failed for {data.get('full_name')}")
         return f"An error occurred: {str(e)}", 500
+
+
+# Cron route to actually send scheduled interview emails
+@app.route("/cron/send-interview-emails")
+def cron_send_interview_emails():
+    """
+    This route should be hit by a cron job (e.g. Render cron, GitHub Actions, etc).
+    It sends all due interview-scheduling emails whose scheduled_at <= now (UTC).
+    Protected with CRON_SECRET so random people can't trigger it.
+    """
+    if CRON_SECRET:
+        token = request.args.get("token")
+        if token != CRON_SECRET:
+            return "unauthorized", 401
+
+    now_utc = datetime.now(timezone.utc)
+    logger.info("cron.send_interview_emails started at %s", now_utc.isoformat())
+
+    try:
+        due_items = get_due_interview_emails(now_utc)
+        sent_count = 0
+
+        for item in due_items:
+            try:
+                application_data = {
+                    "full_name": item["full_name"],
+                    "email": item["email"],
+                }
+                job_title = item["job_title"]
+
+                send_interview_scheduling_email(application_data, job_title)
+                mark_interview_email_sent(item["id"])
+                sent_count += 1
+            except Exception:
+                logger.exception("Failed sending scheduled interview email id=%s", item.get("id"))
+
+        logger.info(
+            "cron.send_interview_emails finished: sent=%d at %s",
+            sent_count, datetime.now(timezone.utc).isoformat()
+        )
+        return jsonify({"ok": True, "sent": sent_count, "checked_at": now_utc.isoformat()})
+    except Exception as e:
+        logger.exception("cron.send_interview_emails failed")
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 
 # SendGrid Event Webhook (delivery, bounce, open, click, etc.)
@@ -1232,10 +1417,10 @@ def debug_email():
         test_to = cfg.admin_to or cfg.notify_to or cfg.email_address
         if test_to:
             queue_email(
-                "FMJ Careers - Test Email from Production",
+                "FMJ Capitals Careers - Test Email from Production",
                 test_to,
                 body_text=f"This is a test email from your production server.\n\nTime: {datetime.utcnow().isoformat()}\nEnvironment: {cfg.flask_env}\nProvider: {cfg.email_provider}",
-                from_name="FMJ Careers Debug"
+                from_name="FMJ Capitals Careers Debug"
             )
             test_sent = True
         else:
@@ -1268,6 +1453,8 @@ def test_email_apply():
     try:
         send_application_notification(test_job_title, test_application)
         send_applicant_confirmation_email(test_application, test_job_title)
+        # This sends immediately; for the real flow, cron handles timing.
+        send_interview_scheduling_email(test_application, test_job_title)
 
         return jsonify({
             "success": True,
@@ -1288,9 +1475,9 @@ if cfg.enable_email_test_route:
     def test_email():
         try:
             queue_email(
-                "FMJ Careers: Email Test",
+                "FMJ Capitals Careers: Email Test",
                 cfg.admin_to or cfg.notify_to or cfg.email_address,
-                body_text="This is a test email from FMJ Careers.",
+                body_text="This is a test email from FMJ Capitals Careers.",
             )
             return jsonify({"queued_or_sent": True, "inline": cfg.email_inline_send})
         except Exception as e:
