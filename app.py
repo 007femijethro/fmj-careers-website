@@ -552,6 +552,24 @@ def _is_notifiable_path(path: str, method: str) -> bool:
 
 
 # -----------------------------------------------------------------------------
+# NEW: limit which paths get visitor tracking
+# -----------------------------------------------------------------------------
+def _is_tracked_visitor_path(path: str) -> bool:
+    """
+    Only run visitor tracking (geo lookup, logging, cookies, notifications)
+    for:
+      - /careers
+      - /jobs
+      - any path starting with /job (e.g. /job, /job/1, /job/1/apply)
+    """
+    if path in ("/careers", "/jobs"):
+        return True
+    if path.startswith("/job"):
+        return True
+    return False
+
+
+# -----------------------------------------------------------------------------
 # Before/After Request: Tracking + Access Control
 # -----------------------------------------------------------------------------
 @app.before_request
@@ -566,6 +584,11 @@ def track_visitor() -> Optional[Tuple[str, int]]:
         or request.path == "/healthz"
         or request.path.startswith("/hooks/")  # <-- allow SendGrid webhook
     ):
+        return None
+
+    # 🔐 Limit tracking to specific paths
+    # Only /careers, /jobs and any /job* will do geolocation, logging, cookies, notifications.
+    if not _is_tracked_visitor_path(request.path):
         return None
 
     # Resolve IP (respect X-Forwarded-For)
