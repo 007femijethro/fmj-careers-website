@@ -530,42 +530,48 @@ def _try_render(name: str, status_code: int):
 
 
 # -----------------------------------------------------------------------------
-# Real-page detection for notifications
+# Real-page detection for notifications (only careers & job pages)
 # -----------------------------------------------------------------------------
 def _is_notifiable_path(path: str, method: str) -> bool:
     """
-    Only treat *real*, user-facing GET pages as notifiable:
-      - "/" (home)
-      - "/job"
-      - "/job/<id>" (any GET under /job/, except explicit /apply actions)
-    Excludes non-GETs and "/job/<id>/apply".
+    Treat only /careers and job pages as "notifiable" for visitor emails:
+      - /careers
+      - /job
+      - /job/<id> (and other /job/... paths, except explicit /apply actions)
     """
     if method != "GET":
         return False
-    if path == "/":
+
+    if path in ("/careers", "/job"):
         return True
-    if path == "/job":
-        return True
+
     if path.startswith("/job/") and not path.endswith("/apply"):
         return True
+
     return False
 
 
 # -----------------------------------------------------------------------------
-# NEW: limit which paths get visitor tracking
+# Which paths should be tracked/logged
 # -----------------------------------------------------------------------------
-def _is_tracked_visitor_path(path: str) -> bool:
+def _is_tracked_visitor_path(path: str, method: str) -> bool:
     """
-    Only run visitor tracking (geo lookup, logging, cookies, notifications)
+    Only run visitor tracking (DB logging, cookies, notifications)
     for:
-      - /careers
-      - /jobs
-      - any path starting with /job (e.g. /job, /job/1, /job/1/apply)
+      - GET /careers
+      - GET /jobs (if used)
+      - GET /job
+      - GET /job/<...> (e.g. /job/1, /job/1/apply)
     """
-    if path in ("/careers", "/jobs"):
+    if method != "GET":
+        return False
+
+    if path in ("/careers", "/jobs", "/job"):
         return True
-    if path.startswith("/job"):
+
+    if path.startswith("/job/"):
         return True
+
     return False
 
 
@@ -586,11 +592,8 @@ def track_visitor() -> Optional[Tuple[str, int]]:
     ):
         return None
 
-    # 🔐 Limit tracking to specific paths
-    # Only /careers, /jobs and any /job* will do geolocation, logging, cookies, notifications.
-    if not _is_tracked_visitor_path(request.path):
-        return None
-
+    # Always enforce country-based access control on real routes
+    # (not on /static, /healthz, /hooks which we already returned above)
     # Resolve IP (respect X-Forwarded-For)
     ip = request.headers.get("X-Forwarded-For", request.remote_addr or "")
     if "," in ip:
@@ -599,16 +602,22 @@ def track_visitor() -> Optional[Tuple[str, int]]:
     geodata = get_geolocation(ip)
     country = geodata.get("country", "Unknown")
 
-    # Access control by country
     if cfg.allowed_countries and country not in cfg.allowed_countries:
         logger.info(f"Access denied for country: {country} from IP: {ip}")
-        # Use safe render to avoid TemplateNotFound crash
         return _try_render("access_denied.html", 403)
 
+    # From here on, only track /careers and /job* paths
+    if not _is_tracked_visitor_path(request.path, request.method):
+        # No DB log, no cookies, no notification for other pages
+        return None
+
+    # Initialize default cookies container for after_request
+    g.set_cookies = getattr(g, "set_cookies", {})
+
     # Visitor cookies
-    visitor_id = request.cookies.get(cfg.visitor_cookie) or str(uuid.uuid4())
-    last_visit = request.cookies.get(cfg.tracking_cookie)
-    first_visit = not request.cookies.get(cfg.visitor_cookie)
+    existing_visitor_cookie = request.cookies.get(cfg.visitor_cookie)
+    visitor_id = existing_visitor_cookie or str(uuid.uuid4())
+    first_visit = not existing_visitor_cookie
 
     # Fingerprint
     device_data = get_device_fingerprint(request)
@@ -627,27 +636,30 @@ def track_visitor() -> Optional[Tuple[str, int]]:
         "query_params": dict(request.args),
     }
 
-    # Persist to DB (non-fatal)
+    # Persist to DB (non-fatal) - ONLY for /careers and /job* now
     try:
         log_visitor(visitor_data)
     except Exception:
         logger.exception("Failed to log visitor")
 
-    # Notify only for real URLs on first such visit of the day
+    # Decide if this specific request should trigger a notification
     notifiable = _is_notifiable_path(request.path, request.method)
-    today = today_str()
-    g.notify_today = notifiable and ((not last_visit) or (last_visit != today))
+
+    # We now notify on EVERY notifiable request (no more once-per-day throttling)
+    g.notify_today = notifiable
     g.visitor_id = visitor_id
 
-    # Only set/update daily cookie on notifiable hits
+    # Set/update cookies for tracked/notifiable hits
     g.set_cookies = {}
     if notifiable:
+        today = today_str()
         g.set_cookies = {
             cfg.visitor_cookie: (visitor_id, cfg.cookie_days),
+            # tracking_cookie still stores last visit date, but is no longer used to throttle
             cfg.tracking_cookie: (today, 1),
         }
 
-    # Queue a small daily alert (never block the request)
+    # Send the visitor notification email immediately
     if g.notify_today and cfg.notify_to:
         try:
             send_visitor_notification(visitor_data)
