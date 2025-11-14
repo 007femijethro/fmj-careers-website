@@ -1,41 +1,53 @@
-from sqlalchemy import create_engine, text
 import os
 import json
 from datetime import datetime
-from dotenv import load_dotenv
+from typing import List, Dict, Any, Optional
 
-# Load environment variables
+from dotenv import load_dotenv
+from sqlalchemy import create_engine, text
+
+# -------------------------------------------------------------
+# Environment / Engine
+# -------------------------------------------------------------
 load_dotenv()
 
-# Database configuration
-SUPABASE_URL = os.getenv('SUPABASE_URL')
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+if not SUPABASE_URL:
+    raise RuntimeError("SUPABASE_URL is not set in environment variables")
+
+# Supabase → Postgres connection string
 engine = create_engine(SUPABASE_URL, connect_args={"sslmode": "require"})
 
 
-def get_jobs():
-    """Fetch all jobs from the database."""
+# -------------------------------------------------------------
+# Jobs
+# -------------------------------------------------------------
+def get_jobs() -> List[Dict[str, Any]]:
+    """Fetch all jobs from fmjjobs table."""
     with engine.connect() as conn:
         result = conn.execute(text('SELECT * FROM "fmjjobs"'))
-        jobs = [dict(row) for row in result.mappings()]
-    return jobs
+        return [dict(row) for row in result.mappings()]
 
 
-def get_job(id):
-    """Fetch a specific job by ID."""
+def get_job(id: int) -> Optional[Dict[str, Any]]:
+    """Fetch a specific job by ID from fmjjobs."""
     with engine.connect() as conn:
         result = conn.execute(
             text('SELECT * FROM "fmjjobs" WHERE id = :val'),
-            {'val': id}
+            {"val": id},
         )
         row = result.mappings().first()
-    return dict(row) if row else None
+        return dict(row) if row else None
 
 
+# -------------------------------------------------------------
+# Applications
+# -------------------------------------------------------------
 def add_application_to_db(job_title, data):
     """
     Insert job application into the database.
 
-    Expects a table like:
+    Expected table (add the new location columns if they don't exist yet):
 
         CREATE TABLE applications (
             id BIGSERIAL PRIMARY KEY,
@@ -44,6 +56,9 @@ def add_application_to_db(job_title, data):
             email TEXT,
             country_code TEXT,
             phone_number TEXT,
+            city TEXT,
+            state TEXT,
+            country TEXT,
             linkedin_url TEXT,
             education TEXT,
             work_experience TEXT,
@@ -51,31 +66,74 @@ def add_application_to_db(job_title, data):
             created_at TIMESTAMPTZ DEFAULT NOW()
         );
     """
-    with engine.connect() as conn:
-        query = text('''
+    from sqlalchemy import text as _text
+
+    with engine.begin() as conn:
+        query = _text(
+            """
             INSERT INTO applications (
-                job_title, full_name, email, country_code, phone_number, 
-                linkedin_url, education, work_experience, resume_url
-            ) VALUES (
-                :job_title, :full_name, :email, :country_code, :phone_number, 
-                :linkedin_url, :education, :work_experience, :resume_url
+                job_title,
+                full_name,
+                email,
+                country_code,
+                phone_number,
+                city,
+                state,
+                country,
+                linkedin_url,
+                education,
+                work_experience,
+                resume_url
             )
-        ''')
-        conn.execute(query, {
-            'job_title': job_title,
-            'full_name': data['full_name'],
-            'email': data['email'],
-            'country_code': data['country_code'],
-            'phone_number': data['phone_number'],
-            'linkedin_url': data['linkedin_url'],
-            'education': data['education'],
-            'work_experience': data['work_experience'],
-            'resume_url': data['resume_path']
-        })
-        conn.commit()
+            VALUES (
+                :job_title,
+                :full_name,
+                :email,
+                :country_code,
+                :phone_number,
+                :city,
+                :state,
+                :country,
+                :linkedin_url,
+                :education,
+                :work_experience,
+                :resume_url
+            )
+            """
+        )
+        conn.execute(
+            query,
+            {
+                "job_title": job_title,
+                "full_name": data.get("full_name"),
+                "email": data.get("email"),
+                "country_code": data.get("country_code"),
+                "phone_number": data.get("phone_number"),
+                "city": data.get("city"),
+                "state": data.get("state"),
+                "country": data.get("country"),
+                "linkedin_url": data.get("linkedin_url"),
+                "education": data.get("education"),
+                "work_experience": data.get("work_experience"),
+                "resume_url": data.get("resume_path"),
+            },
+        )
+
+def get_application_by_id(application_id: int) -> Optional[Dict[str, Any]]:
+    """Fetch a single application row by its id."""
+    with engine.connect() as conn:
+        result = conn.execute(
+            text("SELECT * FROM applications WHERE id = :id"),
+            {"id": application_id},
+        )
+        row = result.mappings().first()
+        return dict(row) if row else None
 
 
-def schedule_interview_email(job_title, data, scheduled_at):
+# -------------------------------------------------------------
+# Interview scheduling emails (scheduled_interview_emails)
+# -------------------------------------------------------------
+def schedule_interview_email(job_title: str, data: Dict[str, Any], scheduled_at: datetime) -> None:
     """
     Store a scheduled interview email in the DB.
 
@@ -88,7 +146,6 @@ def schedule_interview_email(job_title, data, scheduled_at):
           email TEXT NOT NULL,
           scheduled_at TIMESTAMPTZ NOT NULL,
           sent BOOLEAN NOT NULL DEFAULT FALSE,
-          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
           sent_at TIMESTAMPTZ
         );
     """
@@ -99,7 +156,8 @@ def schedule_interview_email(job_title, data, scheduled_at):
         raise ValueError("schedule_interview_email requires full_name and email")
 
     with engine.connect() as conn:
-        query = text("""
+        query = text(
+            """
             INSERT INTO scheduled_interview_emails (
                 job_title,
                 full_name,
@@ -113,116 +171,298 @@ def schedule_interview_email(job_title, data, scheduled_at):
                 :scheduled_at,
                 FALSE
             )
-        """)
-        conn.execute(query, {
-            "job_title": job_title,
-            "full_name": full_name,
-            "email": email,
-            "scheduled_at": scheduled_at
-        })
+            """
+        )
+        conn.execute(
+            query,
+            {
+                "job_title": job_title,
+                "full_name": full_name,
+                "email": email,
+                "scheduled_at": scheduled_at,
+            },
+        )
         conn.commit()
 
 
-def get_due_interview_emails(current_time):
+def get_due_interview_emails(current_time: datetime) -> List[Dict[str, Any]]:
     """
     Fetch scheduled interview emails that are due to be sent.
 
-    current_time: datetime (ideally UTC) – all rows with scheduled_at <= current_time and sent = FALSE.
+    Returns rows where:
+      - sent = FALSE
+      - scheduled_at <= current_time
     """
     with engine.connect() as conn:
         result = conn.execute(
-            text("""
+            text(
+                """
                 SELECT id, job_title, full_name, email, scheduled_at
                 FROM scheduled_interview_emails
                 WHERE sent = FALSE
                   AND scheduled_at <= :now
                 ORDER BY scheduled_at ASC
                 LIMIT 200
-            """),
-            {"now": current_time}
+                """
+            ),
+            {"now": current_time},
         )
-        rows = [dict(row) for row in result.mappings()]
-    return rows
+        rows = result.mappings().all()
+        return [dict(row) for row in rows]
 
 
-def mark_interview_email_sent(row_id: int):
-    """Mark a scheduled_interview_emails row as sent."""
+def mark_interview_email_sent(item_id: int, sent_at: Optional[datetime] = None) -> None:
+    """
+    Mark an interview-scheduling email as sent.
+
+    item_id: id from scheduled_interview_emails
+    sent_at: datetime when the email was actually sent (defaults to now UTC)
+    """
+    if sent_at is None:
+        sent_at = datetime.utcnow()
+
     with engine.connect() as conn:
         conn.execute(
-            text("""
+            text(
+                """
                 UPDATE scheduled_interview_emails
-                   SET sent = TRUE,
-                       sent_at = NOW()
-                 WHERE id = :id
-            """),
-            {"id": row_id}
+                SET sent = TRUE,
+                    sent_at = :sent_at
+                WHERE id = :id
+                """
+            ),
+            {
+                "id": item_id,
+                "sent_at": sent_at,
+            },
         )
         conn.commit()
 
 
-def log_visitor(visitor_data):
-    """Store visitor information in the database with location and device details"""
+# -------------------------------------------------------------
+# Visitor Logging (visitors)
+# -------------------------------------------------------------
+def log_visitor(visitor_data: Dict[str, Any]) -> None:
+    """
+    Log a visitor to the visitors table.
+
+    Your app.py sends a single dict like:
+
+        {
+          "visitor_id": str,
+          "ip": str,
+          "timestamp": "...",
+          "first_visit": bool,
+          "path": "/careers",
+          "referrer": "...",
+          "raw_ua": "...",
+          "geodata": {...},
+          "device": {...},
+          "query_params": {...}
+        }
+
+    Expected table:
+
+        CREATE TABLE visitors (
+          id BIGSERIAL PRIMARY KEY,
+          visited_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          ip_address TEXT,
+          page_path TEXT,
+          referrer_url TEXT,
+          user_agent TEXT,
+          browser TEXT,
+          operating_system TEXT,
+          device_type TEXT,
+          country TEXT,
+          region TEXT,
+          city TEXT,
+          isp TEXT,
+          is_mobile BOOLEAN,
+          is_bot BOOLEAN,
+          additional_data JSONB
+        );
+    """
+    ip = visitor_data.get("ip")
+    page_path = visitor_data.get("path")
+    referrer_url = visitor_data.get("referrer")
+    user_agent = visitor_data.get("raw_ua")
+
+    device = visitor_data.get("device") or {}
+    geodata = visitor_data.get("geodata") or {}
+
+    browser = device.get("browser")
+    operating_system = device.get("os")
+    device_type = device.get("device")
+    is_mobile = device.get("is_mobile")
+    is_bot = device.get("is_bot")
+
+    country = geodata.get("country")
+    region = geodata.get("regionName")
+    city = geodata.get("city")
+    isp = geodata.get("isp")
+
     with engine.connect() as conn:
         try:
-            # Updated query to match typical visitor tracking schema
             conn.execute(
-                text('''
-                INSERT INTO visitors (
-                    visitor_id, 
-                    ip, 
-                    visit_timestamp, 
-                    page_path, 
-                    referrer_url,
-                    user_agent,
-                    browser,
-                    operating_system,
-                    device_type,
-                    country,
-                    region,
-                    city,
-                    isp,
-                    is_mobile,
-                    is_bot,
-                    additional_data
-                ) VALUES (
-                    :visitor_id, 
-                    :ip, 
-                    :visit_timestamp, 
-                    :page_path, 
-                    :referrer_url,
-                    :user_agent,
-                    :browser,
-                    :operating_system,
-                    :device_type,
-                    :country,
-                    :region,
-                    :city,
-                    :isp,
-                    :is_mobile,
-                    :is_bot,
-                    :additional_data
-                )
-                '''),
+                text(
+                    """
+                    INSERT INTO visitors (
+                        visited_at,
+                        ip_address,
+                        page_path,
+                        referrer_url,
+                        user_agent,
+                        browser,
+                        operating_system,
+                        device_type,
+                        country,
+                        region,
+                        city,
+                        isp,
+                        is_mobile,
+                        is_bot,
+                        additional_data
+                    ) VALUES (
+                        :visited_at,
+                        :ip_address,
+                        :page_path,
+                        :referrer_url,
+                        :user_agent,
+                        :browser,
+                        :operating_system,
+                        :device_type,
+                        :country,
+                        :region,
+                        :city,
+                        :isp,
+                        :is_mobile,
+                        :is_bot,
+                        :additional_data
+                    )
+                    """
+                ),
                 {
-                    'visitor_id': visitor_data['visitor_id'],
-                    'ip': visitor_data['ip'],
-                    'visit_timestamp': visitor_data['timestamp'],
-                    'page_path': visitor_data['path'],
-                    'referrer_url': visitor_data['referrer'],
-                    'user_agent': visitor_data['raw_ua'],
-                    'browser': visitor_data['device']['browser'],
-                    'operating_system': visitor_data['device']['os'],
-                    'device_type': visitor_data['device']['device'],
-                    'country': visitor_data['geodata'].get('country'),
-                    'region': visitor_data['geodata'].get('regionName'),
-                    'city': visitor_data['geodata'].get('city'),
-                    'isp': visitor_data['geodata'].get('isp'),
-                    'is_mobile': visitor_data['device']['is_mobile'],
-                    'is_bot': visitor_data['device']['is_bot'],
-                    'additional_data': json.dumps(visitor_data)
-                }
+                    "visited_at": datetime.utcnow(),
+                    "ip_address": ip,
+                    "page_path": page_path,
+                    "referrer_url": referrer_url,
+                    "user_agent": user_agent,
+                    "browser": browser,
+                    "operating_system": operating_system,
+                    "device_type": device_type,
+                    "country": country,
+                    "region": region,
+                    "city": city,
+                    "isp": isp,
+                    "is_mobile": is_mobile,
+                    "is_bot": is_bot,
+                    "additional_data": json.dumps(visitor_data),
+                },
             )
             conn.commit()
         except Exception as e:
+            # Non-fatal: app.py already catches exceptions from log_visitor
             print(f"Error logging visitor: {e}")
-            # Consider adding proper error logging here
+
+
+# -------------------------------------------------------------
+# Admin Dashboard helpers (applications + application_tracking)
+# -------------------------------------------------------------
+def get_all_applications_with_status() -> List[Dict[str, Any]]:
+    """
+    Return all applications plus latest interview email + tracking info.
+
+    Joins:
+      - applications
+      - scheduled_interview_emails (latest per email+job_title)
+      - application_tracking (meeting link + last invite)
+
+    IMPORTANT: we do NOT reference a.created_at because your table
+    does not have that column. We simply order by a.id DESC.
+    """
+    with engine.connect() as conn:
+        result = conn.execute(
+            text(
+                """
+                WITH latest_scheduled AS (
+                  SELECT DISTINCT ON (email, job_title)
+                    email,
+                    job_title,
+                    scheduled_at,
+                    sent,
+                    sent_at
+                  FROM scheduled_interview_emails
+                  ORDER BY email, job_title, scheduled_at DESC
+                )
+                SELECT
+                  a.id,
+                  a.job_title,
+                  a.full_name,
+                  a.email,
+                  a.country_code,
+                  a.phone_number,
+                  a.linkedin_url,
+                  a.education,
+                  a.work_experience,
+                  a.resume_url,
+                  ls.scheduled_at AS interview_scheduled_at,
+                  ls.sent AS interview_email_sent,
+                  ls.sent_at AS interview_email_sent_at,
+                  at.meeting_link,
+                  at.last_invite_sent_at
+                FROM applications a
+                LEFT JOIN latest_scheduled ls
+                  ON ls.email = a.email AND ls.job_title = a.job_title
+                LEFT JOIN application_tracking at
+                  ON at.application_id = a.id
+                ORDER BY a.id DESC;
+                """
+            )
+        )
+        return [dict(row) for row in result.mappings()]
+
+
+def record_final_invite(application_id: int, meeting_link: str) -> None:
+    """
+    Store / update meeting_link and mark when final invite was sent.
+
+    Requires:
+
+        CREATE TABLE application_tracking (
+          id BIGSERIAL PRIMARY KEY,
+          application_id BIGINT NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
+          meeting_link TEXT,
+          last_invite_sent_at TIMESTAMPTZ,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+
+        CREATE UNIQUE INDEX IF NOT EXISTS application_tracking_application_id_key
+          ON application_tracking (application_id);
+    """
+    with engine.connect() as conn:
+        conn.execute(
+            text(
+                """
+                INSERT INTO application_tracking (
+                  application_id,
+                  meeting_link,
+                  last_invite_sent_at,
+                  created_at,
+                  updated_at
+                ) VALUES (
+                  :application_id,
+                  :meeting_link,
+                  NOW(),
+                  NOW(),
+                  NOW()
+                )
+                ON CONFLICT (application_id) DO UPDATE
+                SET meeting_link = EXCLUDED.meeting_link,
+                    last_invite_sent_at = NOW(),
+                    updated_at = NOW();
+                """
+            ),
+            {"application_id": application_id, "meeting_link": meeting_link},
+        )
+        conn.commit()

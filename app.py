@@ -23,6 +23,8 @@ from flask import (
     jsonify,
     g,
     Response,  # for safe error fallbacks
+    redirect,
+    url_for,
 )
 from dotenv import load_dotenv
 from email.utils import formataddr
@@ -44,6 +46,10 @@ from database import (
     schedule_interview_email,
     get_due_interview_emails,
     mark_interview_email_sent,
+    # 👇 new helpers you add in database.py
+    get_all_applications_with_status,
+    get_application_by_id,
+    record_final_invite,
 )
 
 # -----------------------------------------------------------------------------
@@ -134,6 +140,9 @@ class AppConfig:
     tracking_cookie: str = os.getenv("TRACKING_COOKIE", "last_visit")
     cookie_days: int = _get_int("COOKIE_DAYS", 365)
 
+    # Admin dashboard token (for /admin/* pages)
+    admin_dashboard_token: str = os.getenv("ADMIN_DASHBOARD_TOKEN", "")
+
     # Security
     served_over_https: bool = _get_bool("SERVED_OVER_HTTPS", True)  # Render uses HTTPS
 
@@ -179,8 +188,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger("fmjcareers")
 
-# Log startup configuration (redacting sensitive info)
-safe_config = {k: v for k, v in cfg.__dict__.items() if "key" not in k.lower() and "password" not in k.lower()}
+# Log startup configuration (redacting sensitive info, including tokens)
+safe_config = {
+    k: v
+    for k, v in cfg.__dict__.items()
+    if not any(s in k.lower() for s in ("key", "password", "token"))
+}
 logger.info(f"Application starting with config: {safe_config}")
 logger.info(f"Running on Render: {cfg.is_render}")
 logger.info(f"Email provider: {cfg.email_provider}, Enabled: {cfg.email_enabled}")
@@ -529,6 +542,25 @@ def _try_render(name: str, status_code: int):
         return Response(f"{status_code} error at {request.path}", status=status_code, mimetype="text/plain")
 
 
+def _require_admin_dashboard():
+    """
+    Simple protection for /admin/* routes using ?token=... or a hidden form field.
+
+    If ADMIN_DASHBOARD_TOKEN is not set, routes are effectively open.
+    """
+    token_required = cfg.admin_dashboard_token
+    if not token_required:
+        # No token configured = no protection
+        return None
+
+    token = request.args.get("token") or request.form.get("token")
+    if token != token_required:
+        logger.warning("Admin dashboard access denied: invalid or missing token")
+        return _try_render("access_denied.html", 403)
+
+    return None
+
+
 # -----------------------------------------------------------------------------
 # Real-page detection for notifications (only careers & job pages)
 # -----------------------------------------------------------------------------
@@ -688,208 +720,233 @@ def set_tracking_cookies(response):
 # Email Composers (enqueue; non-blocking)
 # -----------------------------------------------------------------------------
 def send_application_notification(job_title: str, application_data: Dict[str, Any]) -> None:
-    """Send beautifully formatted notification to admin about new application."""
+    """Send formatted notification to admin about new application."""
     if not cfg.admin_to:
         logger.warning("No ADMIN_TO configured for application notifications")
         return
 
-    applicant_name = application_data.get('full_name', 'Unknown Applicant')
+    applicant_name = application_data.get("full_name", "Unknown Applicant")
     subject = f"📬 New Application for {job_title} - {applicant_name}"
 
-    linkedin_html = ""
-    if application_data.get('linkedin_url'):
-        linkedin_url = application_data.get('linkedin_url')
-        linkedin_html = f"""
-            <div class="info-item" style="grid-column: 1 / -1;">
-                <div class="info-label">🔗 LinkedIn Profile</div>
-                <div class="info-value">
-                    <a href="{linkedin_url}" style="color: #d6336c; text-decoration: none;">{linkedin_url}</a>
-                </div>
-            </div>
-        """
+    # Build location string
+    location_parts = [
+        application_data.get("city"),
+        application_data.get("state"),
+        application_data.get("country"),
+    ]
+    location_str = ", ".join([p for p in location_parts if p])
 
-    body_html = f"""<!DOCTYPE html>
+    timestamp = datetime.utcnow().strftime("%B %d, %Y at %H:%M UTC")
+
+    def _safe(value: Any, default: str = "Not provided") -> str:
+        return str(value) if (value is not None and str(value).strip()) else default
+
+    body_html = f"""\
+<!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <style>
-        body {{
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            margin: 0;
-            padding: 20px;
-        }}
-        .container {{
-            max-width: 600px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            overflow: hidden;
-        }}
-        .header {{
-            background: linear-gradient(135deg, #d6336c 0%, #a61e4d 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }}
-        .header h1 {{
-            margin: 0;
-            font-size: 24px;
-            font-weight: 600;
-        }}
-        .content {{
-            padding: 30px;
-        }}
-        .applicant-card {{
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
-            margin: 20px 0;
-            border-left: 4px solid #d6336c;
-        }}
-        .info-grid {{
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin: 20px 0;
-        }}
-        .info-item {{
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #e9ecef;
-        }}
-        .info-label {{
-            font-weight: 600;
-            color: #495057;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }}
-        .info-value {{
-            color: #212529;
-            font-size: 14px;
-            margin-top: 5px;
-        }}
-        .action-btn {{
-            display: inline-block;
-            background: linear-gradient(135deg, #d6336c 0%, #a61e4d 100%);
-            color: white;
-            padding: 12px 30px;
-            text-decoration: none;
-            border-radius: 25px;
-            font-weight: 600;
-            margin: 10px 5px;
-        }}
-        .footer {{
-            background: #f8f9fa;
-            padding: 20px;
-            text-align: center;
-            color: #6c757d;
-            font-size: 12px;
-        }}
-        .badge {{
-            background: #d6336c;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-        }}
-        .timestamp {{
-            color: #6c757d;
-            font-size: 12px;
-            text-align: center;
-            margin-bottom: 20px;
-        }}
-    </style>
+  <meta charset="utf-8" />
+  <title>New job application</title>
+  <style>
+    body {{
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f9fafb;
+      margin: 0;
+      padding: 0;
+    }}
+    .container {{
+      max-width: 720px;
+      margin: 24px auto;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+      overflow: hidden;
+      border: 1px solid #e5e7eb;
+    }}
+    .header {{
+      background: linear-gradient(135deg, #0f766e, #2563eb);
+      color: #ffffff;
+      padding: 24px 28px;
+    }}
+    .header h1 {{
+      margin: 0;
+      font-size: 22px;
+      font-weight: 600;
+    }}
+    .header p {{
+      margin: 6px 0 0 0;
+      opacity: 0.9;
+      font-size: 14px;
+    }}
+    .content {{
+      padding: 24px 28px 28px 28px;
+    }}
+    .meta {{
+      font-size: 13px;
+      color: #6b7280;
+      margin-bottom: 16px;
+    }}
+    .card {{
+      background: #f9fafb;
+      border-radius: 12px;
+      padding: 18px 20px;
+      border-left: 4px solid #0ea5e9;
+      margin-bottom: 18px;
+    }}
+    .card-title {{
+      font-size: 15px;
+      font-weight: 600;
+      margin: 0 0 8px 0;
+      color: #111827;
+    }}
+    .field-label {{
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }}
+    .field-value {{
+      font-size: 14px;
+      color: #111827;
+      word-break: break-word;
+    }}
+    .grid {{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px 20px;
+      margin-top: 4px;
+    }}
+    .badge {{
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      background: #ecfdf5;
+      color: #047857;
+      border: 1px solid #bbf7d0;
+      margin-top: 8px;
+    }}
+    .footer-note {{
+      font-size: 12px;
+      color: #9ca3af;
+      margin-top: 24px;
+    }}
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🎯 New Job Application Received</h1>
-            <p style="margin: 10px 0 0 0; opacity: 0.9;">FMJ Capitals Careers Portal</p>
-        </div>
-
-        <div class="content">
-            <div class="timestamp">📅 {datetime.utcnow().strftime('%B %d, %Y at %H:%M UTC')}</div>
-
-            <div class="applicant-card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h2 style="margin: 0; color: #d6336c;">{applicant_name}</h2>
-                    <span class="badge">New Applicant</span>
-                </div>
-                <div style="color: #495057; margin-bottom: 15px;">
-                    Applied for: <strong>{job_title}</strong>
-                </div>
-            </div>
-
-            <div class="info-grid">
-                <div class="info-item">
-                    <div class="info-label">📧 Email</div>
-                    <div class="info-value">{application_data.get('email', 'Not provided')}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">📞 Phone</div>
-                    <div class="info-value">{application_data.get('country_code', '')} {application_data.get('phone_number', 'Not provided')}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">🎓 Education</div>
-                    <div class="info-value">{application_data.get('education', 'Not provided')}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">💼 Experience</div>
-                    <div class="info-value">{application_data.get('work_experience', 'Not provided')}</div>
-                </div>
-            </div>
-
-            {linkedin_html}
-
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="https://fmjcareers.com/admin/applications" class="action-btn">View All Applications</a>
-                <a href="mailto:{application_data.get('email', '')}" class="action-btn" style="background: linear-gradient(135deg, #20c997 0%, #099268 100%);">Contact Applicant</a>
-            </div>
-        </div>
-
-        <div class="footer">
-            <p>This email was sent automatically from FMJ Capitals Careers Portal</p>
-            <p>© 2025 FMJ Capitals. All rights reserved.</p>
-        </div>
+  <div class="container">
+    <div class="header">
+      <h1>🎯 New application – {job_title}</h1>
+      <p>FMJ Capitals Careers Portal</p>
     </div>
+    <div class="content">
+      <div class="meta">
+        Received on <strong>{timestamp}</strong>
+      </div>
+
+      <div class="card">
+        <div class="card-title">👤 Applicant</div>
+        <div class="grid">
+          <div>
+            <div class="field-label">Full name</div>
+            <div class="field-value">{_safe(application_data.get("full_name"))}</div>
+          </div>
+          <div>
+            <div class="field-label">Email</div>
+            <div class="field-value">{_safe(application_data.get("email"))}</div>
+          </div>
+          <div>
+            <div class="field-label">Phone</div>
+            <div class="field-value">
+              +{_safe(application_data.get("country_code"), "")} {_safe(application_data.get("phone_number"), "")}
+            </div>
+          </div>
+          <div>
+            <div class="field-label">Location</div>
+            <div class="field-value">{_safe(location_str)}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📄 Application details</div>
+        <div class="grid">
+          <div>
+            <div class="field-label">Education</div>
+            <div class="field-value">{_safe(application_data.get("education"))}</div>
+          </div>
+          <div>
+            <div class="field-label">LinkedIn</div>
+            <div class="field-value">
+              {_safe(application_data.get("linkedin_url"))}
+            </div>
+          </div>
+        </div>
+        <div style="margin-top: 12px;">
+          <div class="field-label">Work experience</div>
+          <div class="field-value">{_safe(application_data.get("work_experience"))}</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">✅ Next suggested steps</div>
+        <ul style="margin: 8px 0 0 18px; padding: 0; font-size: 14px; color: #374151;">
+          <li>Review this application and attached resume in your dashboard or storage.</li>
+          <li>Shortlist and reach out to the candidate to schedule a Microsoft Teams interview.</li>
+          <li>Update the application status in your tracking sheet or system.</li>
+        </ul>
+        <div class="badge">Automated notification from FMJ Capitals Careers Portal</div>
+      </div>
+
+      <div class="footer-note">
+        You are receiving this email because you are configured as the admin recipient (ADMIN_TO) for new job applications.
+      </div>
+    </div>
+  </div>
 </body>
-</html>""".strip()
-
-    body_text = f"""
-NEW JOB APPLICATION - FMJ CAPITALS CAREERS
-{'='*50}
-
-Applicant: {applicant_name}
-Position: {job_title}
-Timestamp: {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}
-
-Contact Information:
-📧 Email: {application_data.get('email', 'Not provided')}
-📞 Phone: {application_data.get('country_code', '')} {application_data.get('phone_number', 'Not provided')}
-🔗 LinkedIn: {application_data.get('linkedin_url', 'Not provided')}
-
-Background:
-🎓 Education: {application_data.get('education', 'Not provided')}
-💼 Experience: {application_data.get('work_experience', 'Not provided')}
-
-Next Steps:
-1. Review the application in admin panel
-2. Contact applicant to schedule interview (via Microsoft Teams)
-3. Update application status
-
----
-FMJ Capitals Careers Portal - Automated Notification
+</html>
 """
 
+    body_text_lines = [
+        f"New application for {job_title}",
+        f"Applicant: {application_data.get('full_name')}",
+        f"Email: {application_data.get('email')}",
+        f"Phone: +{application_data.get('country_code', '')} {application_data.get('phone_number', '')}",
+    ]
+    if location_str:
+        body_text_lines.append(f"Location: {location_str}")
+    body_text_lines.extend(
+        [
+            f"Education: {application_data.get('education')}",
+            f"LinkedIn: {application_data.get('linkedin_url')}",
+            "",
+            "Work experience:",
+            application_data.get("work_experience", "") or "(not provided)",
+        ]
+    )
+    body_text_lines.extend(
+        [
+            "",
+            "Next steps:",
+            "1) Review this application and resume.",
+            "2) Contact the applicant to schedule an interview (via Microsoft Teams).",
+            "",
+            "FMJ Capitals Careers Portal – automated notification.",
+        ]
+    )
+    body_text = "\n".join(body_text_lines)
+
     logger.info(f"Queueing application notification for {applicant_name}")
-    queue_email(subject, cfg.admin_to, body_html=body_html, body_text=body_text, from_name="FMJ Capitals Careers Portal")
+    queue_email(
+        subject,
+        cfg.admin_to,
+        body_html=body_html,
+        body_text=body_text,
+        from_name="FMJ Capitals Careers Portal",
+    )
+
 
 
 def send_visitor_notification(visitor_data: Dict[str, Any]) -> None:
@@ -1129,8 +1186,8 @@ def send_applicant_confirmation_email(application_data: Dict[str, Any], job_titl
     """
     Immediate email after application:
     - Thanks them for applying
-    - Tells them you'll follow up by email to schedule an interview via Microsoft Teams
-    - You also receive a copy of this email.
+    - Confirms that you'll reach out to schedule an interview via Microsoft Teams
+    - Sends a copy to the admin address as well.
     """
     if not isinstance(application_data, dict):
         raise ValueError("application_data must be a dictionary")
@@ -1140,65 +1197,160 @@ def send_applicant_confirmation_email(application_data: Dict[str, Any], job_titl
     applicant_email = application_data["email"]
     applicant_name = application_data["full_name"]
 
+    location_parts = [
+        application_data.get("city"),
+        application_data.get("state"),
+        application_data.get("country"),
+    ]
+    location_str = ", ".join([p for p in location_parts if p])
+
     subject = f"FMJ Capitals – Application received for {job_title}"
 
-    body_html = f"""
+    timestamp = datetime.utcnow().strftime("%B %d, %Y at %H:%M UTC")
+
+    location_html = f"<p><strong>Location:</strong> {location_str}</p>" if location_str else ""
+
+    body_html = f"""\
+<!DOCTYPE html>
 <html>
-  <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; padding: 20px; background-color:#fff5f8;">
-    <div style="max-width: 600px; margin: auto; border: 1px solid #f7c6d3; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(255, 182, 193, 0.3); background:#ffffff;">
-      <img src="https://fmjcareers.com/static/logo.jpg" alt="FMJ Capitals Logo" style="width: 150px; margin-bottom: 30px; display: block; margin-left: auto; margin-right: auto;">
-
-      <p style="font-size: 18px;">Hi <strong style="color: #d6336c;">{applicant_name}</strong>,</p>
-
-      <p style="font-size: 16px; color: #6a1b4d;">
-        Thank you for applying for the <strong style="color: #d6336c;">{job_title}</strong> position at FMJ Capitals.
-      </p>
-
-      <p style="font-size: 16px;">
-        We’ve received your application and our team will review it shortly.
-      </p>
-
-      <p style="font-size: 16px;">
-        We’ll follow up with you by email to schedule an interview, which will be held via <strong>Microsoft Teams</strong>.
-      </p>
-
-      <p style="font-size: 16px;">
-        For now, there’s nothing else you need to do. We’ll be in touch with next steps.
-      </p>
-
-      <p style="font-size: 16px; margin-top: 24px;">Best regards,</p>
-      <p style="font-weight: bold; color: #d6336c; font-size: 16px;">
-        FMJ Capitals Careers Team<br>
-        <a href="mailto:support@fmjcareers.com" style="color: #d6336c; text-decoration: none;">support@fmjcareers.com</a>
-      </p>
+<head>
+  <meta charset="utf-8" />
+  <title>Application received</title>
+  <style>
+    body {{
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f9fafb;
+      margin: 0;
+      padding: 0;
+    }}
+    .container {{
+      max-width: 640px;
+      margin: 24px auto;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+      padding: 28px 28px 24px 28px;
+      border: 1px solid #e5e7eb;
+    }}
+    h1 {{
+      font-size: 22px;
+      margin: 0 0 12px 0;
+      color: #111827;
+    }}
+    p {{
+      font-size: 14px;
+      color: #374151;
+      margin: 0 0 10px 0;
+      line-height: 1.6;
+    }}
+    .meta {{
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 18px;
+    }}
+    .highlight {{
+      background: #eff6ff;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13px;
+      color: #1d4ed8;
+      margin: 14px 0;
+    }}
+    .footer {{
+      margin-top: 22px;
+      font-size: 12px;
+      color: #9ca3af;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 12px;
+    }}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Thank you for applying, {applicant_name}!</h1>
+    <div class="meta">
+      We received your application for <strong>{job_title}</strong> on {timestamp}.
     </div>
-  </body>
+
+    <p>
+      This email confirms that your application has been successfully submitted to
+      <strong>FMJ Capitals</strong>. Our recruitment team will review your details
+      and get back to you via email to schedule an interview, typically held over
+      Microsoft Teams.
+    </p>
+
+    {location_html}
+
+    <p>
+      If any of the information you submitted was incorrect, you can simply reply
+      to this email with the correct details, and our team will update your record.
+    </p>
+
+    <div class="highlight">
+      Please keep an eye on your inbox (and spam/junk folder) for follow-up emails
+      from us regarding interview scheduling and next steps.
+    </div>
+
+    <p>
+      Thank you again for your interest in joining FMJ Capitals. We look forward
+      to learning more about you.
+    </p>
+
+    <div class="footer">
+      Best regards,<br />
+      FMJ Capitals Careers Team<br />
+      support@fmjcareers.com
+    </div>
+  </div>
+</body>
 </html>
-""".strip()
+"""
 
-    body_text = f"""
-Hi {applicant_name},
-
-Thank you for applying for the {job_title} position at FMJ Capitals.
-
-We’ve received your application and our team will review it shortly.
-We’ll follow up with you by email to schedule an interview, which will be held via Microsoft Teams.
-
-Best regards,
-FMJ Capitals Careers Team
-support@fmjcareers.com
-""".strip()
+    body_text_lines = [
+        f"Hi {applicant_name},",
+        "",
+        f"Thank you for applying for the position of {job_title} at FMJ Capitals.",
+        "This email confirms that we have received your application.",
+        "",
+    ]
+    if location_str:
+        body_text_lines.append(f"Location: {location_str}")
+        body_text_lines.append("")
+    body_text_lines.extend(
+        [
+            "Our team will review your details and contact you by email to schedule",
+            "an interview (usually via Microsoft Teams).",
+            "",
+            "Please keep an eye on your inbox and spam/junk folder for follow-up emails.",
+            "",
+            "Best regards,",
+            "FMJ Capitals Careers Team",
+            "support@fmjcareers.com",
+        ]
+    )
+    body_text = "\n".join(body_text_lines)
 
     logger.info(f"Queueing confirmation email for {applicant_email}")
-    queue_email(subject, applicant_email, body_html=body_html, body_text=body_text, from_name="FMJ Capitals Careers")
+    queue_email(
+        subject,
+        applicant_email,
+        body_html=body_html,
+        body_text=body_text,
+        from_name="FMJ Capitals Careers",
+    )
 
     # Send a copy to admin so you are notified of what the applicant received
     admin_copy = cfg.admin_to or cfg.notify_to
     if admin_copy and admin_copy != applicant_email:
         copy_subject = f"[Copy] {subject}"
         logger.info(f"Queueing admin copy of confirmation email to {admin_copy}")
-        queue_email(copy_subject, admin_copy, body_html=body_html, body_text=body_text, from_name="FMJ Capitals Careers")
-
+        queue_email(
+            copy_subject,
+            admin_copy,
+            body_html=body_html,
+            body_text=body_text,
+            from_name="FMJ Capitals Careers",
+        )
 
 def send_interview_scheduling_email(application_data: Dict[str, Any], job_title: str) -> None:
     """
@@ -1350,6 +1502,100 @@ def careers():
     return render_template("careers.html", jobs=jobs)
 
 
+# ------------------- ADMIN APPLICATIONS DASHBOARD ---------------------------
+@app.route("/admin/applications")
+def admin_applications():
+    """
+    Admin dashboard for tracking applications + emails.
+    URL: /admin/applications?token=YOUR_SECRET
+    """
+    maybe_denied = _require_admin_dashboard()
+    if maybe_denied is not None:
+        return maybe_denied
+
+    applications = get_all_applications_with_status()
+    token = request.args.get("token") or cfg.admin_dashboard_token
+
+    return render_template(
+        "admin_applications.html",
+        applications=applications,
+        admin_token=token,
+    )
+
+
+@app.post("/admin/applications/<int:application_id>/send-invite")
+def admin_send_invite(application_id: int):
+    """
+    Send final interview invitation email for a specific application,
+    including the meeting link (Microsoft Teams, Zoom, etc.).
+    """
+    maybe_denied = _require_admin_dashboard()
+    if maybe_denied is not None:
+        return maybe_denied
+
+    meeting_link = (request.form.get("meeting_link") or "").strip()
+    token = request.form.get("token") or cfg.admin_dashboard_token
+
+    if not meeting_link:
+        return "Meeting link is required", 400
+
+    application = get_application_by_id(application_id)
+    if not application:
+        return "Application not found", 404
+
+    applicant_email = application["email"]
+    applicant_name = application.get("full_name") or "there"
+    job_title = application.get("job_title") or "your role"
+
+    subject = f"Interview invitation – {job_title}"
+
+    body_text = f"""Hi {applicant_name},
+
+Thank you again for applying for the {job_title} role at FMJ Capitals.
+
+Your interview has now been scheduled.
+
+Meeting link: {meeting_link}
+
+If you need to reschedule, please reply directly to this email.
+
+Best regards,
+FMJ Capitals Careers
+"""
+
+    body_html = f"""
+<html>
+  <body style="font-family: Arial, sans-serif; color: #111; line-height: 1.5;">
+    <p>Hi {applicant_name},</p>
+    <p>Thank you again for applying for the <strong>{job_title}</strong> role at FMJ Capitals.</p>
+    <p>Your interview has now been scheduled and will be held online.</p>
+    <p><strong>Meeting link:</strong>
+      <a href="{meeting_link}" target="_blank" rel="noopener noreferrer">
+        {meeting_link}
+      </a>
+    </p>
+    <p>If you need to reschedule, please reply directly to this email.</p>
+    <p>Best regards,<br>FMJ Capitals Careers</p>
+  </body>
+</html>
+""".strip()
+
+    logger.info("Sending final invite for application %s to %s", application_id, applicant_email)
+    queue_email(
+        subject=subject,
+        to_addr=applicant_email,
+        body_html=body_html,
+        body_text=body_text,
+        from_name=cfg.from_name,
+    )
+
+    # Store / update tracking info in DB
+    record_final_invite(application_id, meeting_link)
+
+    # Redirect back to admin dashboard preserving token
+    return redirect(url_for("admin_applications", token=token))
+
+
 @app.route("/job/<int:id>")
 def show_job(id: int):
     job = get_job(id)
@@ -1374,6 +1620,11 @@ def apply_to_job(id: int):
         "email": request.form.get("email"),
         "country_code": request.form.get("country_code"),
         "phone_number": request.form.get("phone_number"),
+        # NEW LOCATION FIELDS
+        "city": request.form.get("city"),
+        "state": request.form.get("state"),
+        "country": request.form.get("country"),
+        # EXISTING FIELDS
         "linkedin_url": request.form.get("linkedin_url"),
         "education": request.form.get("education"),
         "work_experience": request.form.get("work_experience"),

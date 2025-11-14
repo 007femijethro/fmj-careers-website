@@ -1,58 +1,145 @@
-<div style="max-width: 700px; margin: 30px auto; padding: 40px; background-color: #f5f5f5; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
-  <h4 style="text-align: center; font-size: 24px; font-family: 'Montserrat', sans-serif; margin-bottom: 20px;">APPLICATION FORM</h4>
+<div style="max-width: 700px; margin: 30px auto; padding: 40px; background-color: #ffffff; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.06);">
+  <h4 style="text-align: center; font-size: 24px; font-family: 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin-bottom: 24px;">
+    APPLICATION FORM
+  </h4>
+
   <form action="/job/{{ job['id'] }}/apply" method="post">
-    <div class="mb-2">
-      <label>Full Name</label><br>
-      <input type="text" required name="full_name" placeholder="John Smith" style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px;">
+    <!-- Full name -->
+    <div class="mb-2" style="margin-bottom: 16px;">
+      <label style="font-weight: 600; display: block; margin-bottom: 4px;">Full Name</label>
+      <input
+        type="text"
+        name="full_name"
+        required
+        placeholder="Enter your full name"
+        style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;"
+      />
     </div>
 
-    <div class="mb-2">
-      <label>Email</label><br>
-      <input type="email" required name="email" placeholder="johnsmith@gmail.com" style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px;">
+    <!-- Email -->
+    <div class="mb-2" style="margin-bottom: 16px;">
+      <label style="font-weight: 600; display: block; margin-bottom: 4px;">Email</label>
+      <input
+        type="email"
+        name="email"
+        required
+        placeholder="you@example.com"
+        style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;"
+      />
     </div>
 
-    <div class="mb-2">
-      <label>Phone Number</label><br>
-      <div style="display: flex; align-items: center;">
-        <span style="padding: 4px; border: 1px solid #ccc; border-radius: 4px 0 0 4px; background-color: #f5f5f5;">+</span>
-        <input type="text" required name="country_code" value="1" style="width: 50px; padding: 10px; border: 1px solid #ccc; border-radius: 0 4px 4px 0; border-left: none; margin-right: 10px;">
-        <input type="tel" required name="phone_number" placeholder="123-456-7890" style="width: calc(100% - 60px); padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+    <!-- Phone -->
+    <div class="mb-2" style="margin-bottom: 16px;">
+      <label style="font-weight: 600; display: block; margin-bottom: 4px;">Phone Number</label>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <input
+          type="text"
+          name="country_code"
+          required
+          value="1"
+          style="width: 80px; padding: 10px 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; text-align: center;"
+        />
+        <input
+          type="tel"
+          name="phone_number"
+          required
+          placeholder="Phone number"
+          style="flex: 1; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;"
+        />
+      </div>
+      <small style="display:block; margin-top: 4px; font-size: 12px; color:#6b7280;">
+        Country code (e.g. 234) + phone number.
+      </small>
+    </div>
+
+    <!-- Location: City / State / Country -->
+    <div class="mb-2" style="margin-bottom: 16px;">
+      <label style="font-weight: 600; display: block; margin-bottom: 4px;">Location</label>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px;">
+        <input
+          type="text"
+          name="city"
+          required
+          placeholder="City"
+          style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;"
+        />
+        <input
+          type="text"
+          name="state"
+          required
+          placeholder="State / Region"
+          style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;"
+        />
+        <input
+          type="text"
+          name="country"
+          required
+          placeholder="Country"
+          style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;"
+        />
       </div>
     </div>
 
-
-    <div class="mb-2">
-      <label>LinkedIn URL</label><br>
-      <input type="url" name="linkedin_url" placeholder="https://linkedin.com/in/johnsmith" style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px;">
+    <!-- LinkedIn -->
+    <div class="mb-2" style="margin-bottom: 16px;">
+      <label style="font-weight: 600; display: block; margin-bottom: 4px;">LinkedIn URL (optional)</label>
+      <input
+        type="url"
+        name="linkedin_url"
+        placeholder="https://www.linkedin.com/in/your-profile"
+        style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;"
+      />
     </div>
 
-    <div class="mb-2">
-      <label>Work Experience</label><br>
-      <textarea name="work_experience" placeholder="Describe your work experience..." rows="5" style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px;"></textarea>
+    <!-- Education -->
+    <div class="mb-2" style="margin-bottom: 16px;">
+      <label style="font-weight: 600; display: block; margin-bottom: 4px;">Education</label>
+      <textarea
+        name="education"
+        rows="3"
+        placeholder="Summarise your education"
+        style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; resize: vertical;"
+      ></textarea>
     </div>
 
-    <div class="mb-2">
-      <label>Education</label><br>
-      <textarea name="education" placeholder="Describe your education background..." rows="4" style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px;"></textarea>
+    <!-- Work experience -->
+    <div class="mb-2" style="margin-bottom: 16px;">
+      <label style="font-weight: 600; display: block; margin-bottom: 4px;">Work Experience</label>
+      <textarea
+        name="work_experience"
+        rows="4"
+        placeholder="Describe your relevant experience"
+        style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; resize: vertical;"
+      ></textarea>
     </div>
 
-    <div class="mb-2">
-      <label>Skills</label><br>
-      <input type="text" name="skills" placeholder="E.g., Python, Project Management, Communication" style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px;">
+    <!-- Cover letter (kept for backwards compatibility) -->
+    <div class="mb-2" style="margin-bottom: 16px;">
+      <label style="font-weight: 600; display: block; margin-bottom: 4px;">Cover Letter (optional)</label>
+      <textarea
+        name="cover_letter"
+        rows="4"
+        placeholder="Write your cover letter"
+        style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; resize: vertical;"
+      ></textarea>
     </div>
 
-    <div class="mb-2">
-      <label>Cover Letter</label><br>
-      <textarea name="cover_letter" placeholder="Write your cover letter..." rows="6" style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px;"></textarea>
-    </div>
-
-    <div class="mb-2">
-      <label>Upload Resume</label><br>
-      <input type="file" name="resume_path" style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px;">
+    <!-- Resume path (kept as form field; backend still reads resume_path from form) -->
+    <div class="mb-2" style="margin-bottom: 20px;">
+      <label style="font-weight: 600; display: block; margin-bottom: 4px;">Upload Resume</label>
+      <input
+        type="file"
+        name="resume_path"
+        style="width: 100%; padding: 8px 0; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;"
+      />
     </div>
 
     <div style="text-align: center; margin-top: 20px;">
-      <input type="submit" value="Submit Application" style="background-color: #ff69b4; color: white; border: none; padding: 10px 20px; border-radius: 50px; cursor: pointer;">
+      <input
+        type="submit"
+        value="Submit Application"
+        style="background: linear-gradient(135deg, #2563eb, #0ea5e9); color: #ffffff; border: none; padding: 10px 32px; border-radius: 999px; cursor: pointer; font-size: 14px; font-weight: 600;"
+      />
     </div>
   </form>
 </div>

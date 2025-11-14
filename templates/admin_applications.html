@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FMJ Careers – Application Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Fonts (same as home.html) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon-32.png') }}">
+
+  <style>
+    :root {
+      --bg: #fff5f8;
+      --card: #ffffff;
+      --border-subtle: rgba(244, 114, 182, 0.25);
+      --primary: #ec4899;
+      --text-muted: #6b7280;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      font-family: "Open Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #111827;
+    }
+
+    main {
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 0 16px 40px;
+    }
+
+    h1 {
+      font-family: "Montserrat", system-ui;
+      font-size: 1.75rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      border: 1px solid var(--border-subtle);
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(248, 113, 176, 0.12);
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    th, td {
+      padding: 10px 8px;
+      border-bottom: 1px solid #f3e8ff;
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #6b7280;
+      white-space: nowrap;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      border: 1px solid rgba(52, 211, 153, 0.4);
+      color: #047857;
+      background: rgba(16, 185, 129, 0.08);
+    }
+
+    .badge.badge-pending {
+      border-color: rgba(245, 158, 11, 0.4);
+      color: #92400e;
+      background: rgba(251, 191, 36, 0.1);
+    }
+
+    .badge.badge-missing {
+      border-color: rgba(239, 68, 68, 0.4);
+      color: #991b1b;
+      background: rgba(248, 113, 113, 0.1);
+    }
+
+    .meeting-input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 6px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(156, 163, 175, 0.6);
+      font-size: 0.8rem;
+      margin-bottom: 6px;
+    }
+
+    .meeting-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 1px rgba(236, 72, 153, 0.4);
+    }
+
+    .btn-small {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 5px 12px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.78rem;
+      font-weight: 600;
+      background: var(--primary);
+      color: #ffffff;
+      transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.12s ease;
+    }
+
+    .btn-small:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 16px rgba(236, 72, 153, 0.25);
+      background: #db2777;
+    }
+
+    .btn-small:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
+    .secondary-text {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 768px) {
+      th, td {
+        padding: 8px 6px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  {% include "nav.html" %}
+
+  <main>
+    <h1>Application Tracker</h1>
+    <p class="subtitle">
+      Internal page to see applicants, what emails they received, and send final interview invitations.
+    </p>
+
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Candidate</th>
+            <th>Job</th>
+            <th>Applied</th>
+            <th>Scheduling Email</th>
+            <th>Final Invite</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for app in applications %}
+          <tr>
+            <td>#{{ app.id }}</td>
+
+            <td>
+              <div><strong>{{ app.full_name }}</strong></div>
+              <div class="secondary-text">
+                <a href="mailto:{{ app.email }}">{{ app.email }}</a><br>
+                {{ app.phone_number or '' }}
+              </div>
+            </td>
+
+            <td>
+              <div>{{ app.job_title }}</div>
+              <div class="secondary-text">
+                {{ app.country_code or '' }}
+              </div>
+            </td>
+
+            <td>
+              <div class="secondary-text">
+                {{ app.created_at }}
+              </div>
+            </td>
+
+            <td>
+              {% if app.interview_email_sent %}
+                <span class="badge">Sent</span>
+                <div class="secondary-text">
+                  at {{ app.interview_email_sent_at }}
+                </div>
+              {% elif app.interview_scheduled_at %}
+                <span class="badge badge-pending">Scheduled</span>
+                <div class="secondary-text">
+                  for {{ app.interview_scheduled_at }}
+                </div>
+              {% else %}
+                <span class="badge badge-missing">Not scheduled</span>
+              {% endif %}
+            </td>
+
+            <td>
+              <form method="post"
+                    action="{{ url_for('admin_send_invite', application_id=app.id) }}">
+                <input type="hidden" name="token" value="{{ admin_token }}">
+
+                <input
+                  type="url"
+                  name="meeting_link"
+                  class="meeting-input"
+                  placeholder="https://meet.google.com/..."
+                  value="{{ app.meeting_link or '' }}"
+                  required
+                />
+
+                {% if app.last_invite_sent_at %}
+                  <div class="secondary-text" style="margin-bottom: 4px;">
+                    Last invite sent: {{ app.last_invite_sent_at }}
+                  </div>
+                  <button type="submit" class="btn-small">
+                    Resend invite
+                  </button>
+                {% else %}
+                  <button type="submit" class="btn-small">
+                    Send invite
+                  </button>
+                {% endif %}
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </main>
+</body>
+</html>
