@@ -6,6 +6,7 @@ from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 
+
 # -------------------------------------------------------------
 # Environment / Engine
 # -------------------------------------------------------------
@@ -118,6 +119,57 @@ def add_application_to_db(job_title, data):
                 "resume_url": data.get("resume_path"),
             },
         )
+
+
+def set_application_status(
+    application_id: int,
+    status: str,
+    interview_time: Optional[str] = None,
+) -> None:
+    """
+    Set a manual pipeline status and (optionally) an interview_time note.
+
+    The first 3 statuses (Applied, Email Sent, Interview Scheduled)
+    are normally automatic. This helper lets you override with:
+      - Interviewing
+      - Interview Passed
+      - Agreed to Proceed
+      - Check Sent
+      - Money Dropped
+      - Cashed out
+      - Equipment Sent
+    """
+    with engine.connect() as conn:
+        conn.execute(
+            text(
+                """
+                INSERT INTO application_tracking (
+                  application_id,
+                  pipeline_status,
+                  interview_time,
+                  created_at,
+                  updated_at
+                )
+                VALUES (
+                  :application_id,
+                  :status,
+                  :interview_time,
+                  NOW(),
+                  NOW()
+                )
+                ON CONFLICT (application_id) DO UPDATE
+                SET pipeline_status = EXCLUDED.pipeline_status,
+                    interview_time = COALESCE(EXCLUDED.interview_time, application_tracking.interview_time),
+                    updated_at = NOW();
+                """
+            ),
+            {
+                "application_id": application_id,
+                "status": status,
+                "interview_time": interview_time,
+            },
+        )
+
 
 def get_application_by_id(application_id: int) -> Optional[Dict[str, Any]]:
     """Fetch a single application row by its id."""
@@ -401,6 +453,9 @@ def get_all_applications_with_status() -> List[Dict[str, Any]]:
                   a.email,
                   a.country_code,
                   a.phone_number,
+                  a.city,
+                  a.state,
+                  a.country,
                   a.linkedin_url,
                   a.education,
                   a.work_experience,
@@ -409,6 +464,8 @@ def get_all_applications_with_status() -> List[Dict[str, Any]]:
                   ls.sent AS interview_email_sent,
                   ls.sent_at AS interview_email_sent_at,
                   at.meeting_link,
+                  at.interview_time,
+                  at.pipeline_status,
                   at.last_invite_sent_at
                 FROM applications a
                 LEFT JOIN latest_scheduled ls
@@ -416,15 +473,22 @@ def get_all_applications_with_status() -> List[Dict[str, Any]]:
                 LEFT JOIN application_tracking at
                   ON at.application_id = a.id
                 ORDER BY a.id DESC;
+
                 """
             )
         )
         return [dict(row) for row in result.mappings()]
 
 
-def record_final_invite(application_id: int, meeting_link: str) -> None:
+def record_final_invite(
+    application_id: int,
+    meeting_link: str,
+    interview_time: Optional[str] = None,
+    pipeline_status: str = "Interview Scheduled",
+) -> None:
     """
-    Store / update meeting_link and mark when final invite was sent.
+    Store / update meeting_link, the (optional) interview_time note,
+    and mark when the final invite was sent.
 
     Requires:
 
@@ -432,6 +496,8 @@ def record_final_invite(application_id: int, meeting_link: str) -> None:
           id BIGSERIAL PRIMARY KEY,
           application_id BIGINT NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
           meeting_link TEXT,
+          interview_time TEXT,
+          pipeline_status TEXT,
           last_invite_sent_at TIMESTAMPTZ,
           created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
           updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -447,22 +513,33 @@ def record_final_invite(application_id: int, meeting_link: str) -> None:
                 INSERT INTO application_tracking (
                   application_id,
                   meeting_link,
+                  interview_time,
+                  pipeline_status,
                   last_invite_sent_at,
                   created_at,
                   updated_at
                 ) VALUES (
                   :application_id,
                   :meeting_link,
+                  :interview_time,
+                  :pipeline_status,
                   NOW(),
                   NOW(),
                   NOW()
                 )
                 ON CONFLICT (application_id) DO UPDATE
                 SET meeting_link = EXCLUDED.meeting_link,
+                    interview_time = EXCLUDED.interview_time,
+                    pipeline_status = COALESCE(EXCLUDED.pipeline_status, application_tracking.pipeline_status),
                     last_invite_sent_at = NOW(),
                     updated_at = NOW();
                 """
             ),
-            {"application_id": application_id, "meeting_link": meeting_link},
+            {
+                "application_id": application_id,
+                "meeting_link": meeting_link,
+                "interview_time": interview_time,
+                "pipeline_status": pipeline_status,
+            },
         )
-        conn.commit()
+

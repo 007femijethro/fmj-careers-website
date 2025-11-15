@@ -166,7 +166,7 @@
   <main>
     <h1>Application Tracker</h1>
     <p class="subtitle">
-      Internal page to see applicants, what emails they received, and send final interview invitations.
+      Internal page to see applicants, what emails they received, manage pipeline status, and send final interview invitations.
     </p>
 
     <div class="card">
@@ -175,8 +175,9 @@
           <tr>
             <th>ID</th>
             <th>Candidate</th>
-            <th>Job</th>
+            <th>Job / Address</th>
             <th>Applied</th>
+            <th>Status</th>
             <th>Scheduling Email</th>
             <th>Final Invite</th>
           </tr>
@@ -184,8 +185,10 @@
         <tbody>
         {% for app in applications %}
           <tr>
+            <!-- ID -->
             <td>#{{ app.id }}</td>
 
+            <!-- Candidate -->
             <td>
               <div><strong>{{ app.full_name }}</strong></div>
               <div class="secondary-text">
@@ -194,22 +197,79 @@
               </div>
             </td>
 
+            <!-- Job / Address -->
             <td>
               <div>{{ app.job_title }}</div>
               <div class="secondary-text">
-                {{ app.country_code or '' }}
+                {% if app.city %}{{ app.city }}{% endif %}
+                {% if app.state %}{% if app.city %}, {% endif %}{{ app.state }}{% endif %}
+                {% if app.country %}{% if app.city or app.state %}, {% endif %}{{ app.country }}{% endif %}
               </div>
             </td>
 
+            <!-- Applied -->
             <td>
               <div class="secondary-text">
                 {{ app.created_at }}
               </div>
             </td>
 
+            <!-- Status (auto first 3, manual rest) -->
+            <td>
+              {# compute automatic status based on system data #}
+              {% if app.interview_email_sent %}
+                {% set auto_status = "Email Sent" %}
+              {% elif app.interview_scheduled_at %}
+                {% set auto_status = "Interview Scheduled" %}
+              {% else %}
+                {% set auto_status = "Applied" %}
+              {% endif %}
+
+              {% set current_status = app.pipeline_status or auto_status %}
+
+              <form method="post"
+                    action="{{ url_for('admin_update_status', application_id=app.id) }}">
+                <input type="hidden" name="token" value="{{ admin_token }}">
+
+                <select name="status"
+                        class="meeting-input"
+                        onchange="this.form.submit()">
+                  {% set options = [
+                    'Applied',
+                    'Email Sent',
+                    'Interview Scheduled',
+                    'Interviewing',
+                    'Interview Passed',
+                    'Agreed to Proceed',
+                    'Check Sent',
+                    'Money Dropped',
+                    'Cashed out',
+                    'Equipment Sent'
+                  ] %}
+                  {% for option in options %}
+                    <option value="{{ option }}"
+                            {% if current_status == option %}selected{% endif %}>
+                      {{ option }}
+                    </option>
+                  {% endfor %}
+                </select>
+
+                {% if not app.pipeline_status %}
+                  <div class="secondary-text">
+                    Auto status: {{ auto_status }}
+                  </div>
+                {% else %}
+                  <div class="secondary-text">
+                    Manual status
+                  </div>
+                {% endif %}
+              </form>
+            </td>
+
+            <!-- Scheduling Email (auto badges) -->
             <td>
               {% if app.interview_email_sent %}
-                <span class="badge">Sent</span>
+                <span class="badge">Email sent</span>
                 <div class="secondary-text">
                   at {{ app.interview_email_sent_at }}
                 </div>
@@ -223,6 +283,7 @@
               {% endif %}
             </td>
 
+            <!-- Final Invite (meeting link + interview time) -->
             <td>
               <form method="post"
                     action="{{ url_for('admin_send_invite', application_id=app.id) }}">
@@ -235,6 +296,14 @@
                   placeholder="https://meet.google.com/..."
                   value="{{ app.meeting_link or '' }}"
                   required
+                />
+
+                <input
+                  type="text"
+                  name="interview_time"
+                  class="meeting-input"
+                  placeholder="e.g. Tue 18 Feb, 2:00pm WAT"
+                  value="{{ app.interview_time or '' }}"
                 />
 
                 {% if app.last_invite_sent_at %}

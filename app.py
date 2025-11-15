@@ -46,11 +46,12 @@ from database import (
     schedule_interview_email,
     get_due_interview_emails,
     mark_interview_email_sent,
-    # 👇 new helpers you add in database.py
     get_all_applications_with_status,
     get_application_by_id,
     record_final_invite,
+    set_application_status,
 )
+
 
 # -----------------------------------------------------------------------------
 # Environment / Config
@@ -70,6 +71,19 @@ def _get_int(name: str, default: int) -> int:
         return int(os.getenv(name, default))
     except Exception:
         return default
+
+STATUS_OPTIONS = [
+    "Applied",
+    "Email Sent",
+    "Interview Scheduled",
+    "Interviewing",
+    "Interview Passed",
+    "Agreed to Proceed",
+    "Check Sent",
+    "Money Dropped",
+    "Cashed out",
+    "Equipment Sent",
+]
 
 
 # -----------------------------------------------------------------------------
@@ -1522,18 +1536,42 @@ def admin_applications():
         admin_token=token,
     )
 
+@app.post("/admin/applications/<int:application_id>/status")
+def admin_update_status(application_id: int):
+    """
+    Update the pipeline status for an application.
+
+    First 3 statuses (Applied, Email Sent, Interview Scheduled)
+    are auto-calculated from the system, but you can override them
+    and set any of the later statuses manually.
+    """
+    maybe_denied = _require_admin_dashboard()
+    if maybe_denied is not None:
+        return maybe_denied
+
+    token = request.form.get("token") or cfg.admin_dashboard_token
+    status = (request.form.get("status") or "").strip()
+
+    if status not in STATUS_OPTIONS:
+        return "Invalid status", 400
+
+    set_application_status(application_id, status)
+    return redirect(url_for("admin_applications", token=token))
+
 
 @app.post("/admin/applications/<int:application_id>/send-invite")
 def admin_send_invite(application_id: int):
     """
     Send final interview invitation email for a specific application,
-    including the meeting link (Microsoft Teams, Zoom, etc.).
+    including the meeting link (Microsoft Teams, Zoom, etc.)
+    and optional scheduled time/date text.
     """
     maybe_denied = _require_admin_dashboard()
     if maybe_denied is not None:
         return maybe_denied
 
     meeting_link = (request.form.get("meeting_link") or "").strip()
+    interview_time = (request.form.get("interview_time") or "").strip()
     token = request.form.get("token") or cfg.admin_dashboard_token
 
     if not meeting_link:
@@ -1549,13 +1587,18 @@ def admin_send_invite(application_id: int):
 
     subject = f"Interview invitation – {job_title}"
 
+    if interview_time:
+        when_text = f"Your interview has now been scheduled for {interview_time}.\n\n"
+        when_html = f"<p>Your interview has now been scheduled for <strong>{interview_time}</strong> and will be held online.</p>"
+    else:
+        when_text = "Your interview has now been scheduled.\n\n"
+        when_html = "<p>Your interview has now been scheduled and will be held online.</p>"
+
     body_text = f"""Hi {applicant_name},
 
 Thank you again for applying for the {job_title} role at FMJ Capitals.
 
-Your interview has now been scheduled.
-
-Meeting link: {meeting_link}
+{when_text}Meeting link: {meeting_link}
 
 If you need to reschedule, please reply directly to this email.
 
@@ -1568,7 +1611,7 @@ FMJ Capitals Careers
   <body style="font-family: Arial, sans-serif; color: #111; line-height: 1.5;">
     <p>Hi {applicant_name},</p>
     <p>Thank you again for applying for the <strong>{job_title}</strong> role at FMJ Capitals.</p>
-    <p>Your interview has now been scheduled and will be held online.</p>
+    {when_html}
     <p><strong>Meeting link:</strong>
       <a href="{meeting_link}" target="_blank" rel="noopener noreferrer">
         {meeting_link}
@@ -1589,8 +1632,13 @@ FMJ Capitals Careers
         from_name=cfg.from_name,
     )
 
-    # Store / update tracking info in DB
-    record_final_invite(application_id, meeting_link)
+    # Store / update tracking info in DB (status auto: Interview Scheduled)
+    record_final_invite(
+        application_id,
+        meeting_link,
+        interview_time=interview_time,
+        pipeline_status="Interview Scheduled",
+    )
 
     # Redirect back to admin dashboard preserving token
     return redirect(url_for("admin_applications", token=token))
