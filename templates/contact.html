@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact | FMJ Capitals</title>
+  <style>
+    body{margin:0;font-family:'Open Sans',system-ui;background:#fff5f8;color:#111827}
+    .wrap{max-width:1120px;margin:0 auto;padding:28px 20px 54px}
+    .hero,.card,.faq{background:#fff;border:1px solid rgba(244,114,182,.35);border-radius:18px}
+    .hero{padding:26px;box-shadow:0 20px 45px rgba(236,72,153,.15)}
+    .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:16px}
+    .card{padding:16px}
+    h1,h2,h3{font-family:'Montserrat',system-ui;margin:0 0 8px}
+    p,a{color:#6b7280;line-height:1.7}
+    a{color:#db2777;text-decoration:none}
+    a:hover{text-decoration:underline}
+    .kicker{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#9ca3af;margin-bottom:6px}
+    .faq{margin-top:16px;padding:16px}
+    .faq-item{padding:10px 0;border-bottom:1px dashed rgba(244,114,182,.45)}
+    .faq-item:last-child{border-bottom:none}
+    @media (max-width:980px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  {% include 'nav.html' %}
+  <main class="wrap">
+    <section class="hero">
+      <div class="kicker">Contact</div>
+      <h1>Speak with FMJ Capitals.</h1>
+      <p>Whether you are evaluating a portfolio mandate, requesting advisory support, or applying for a role, we’re ready to connect.</p>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <div class="kicker">Investment enquiries</div>
+        <h2>Prospective clients</h2>
+        <p><a href="mailto:support@fmjcareers.com?subject=FMJ%20Capitals%20-%20Investment%20Enquiry">support@fmjcareers.com</a></p>
+        <p>Share your objectives, timeline, and current portfolio context so we can prepare a useful first discussion.</p>
+      </article>
+      <article class="card">
+        <div class="kicker">Careers</div>
+        <h2>Recruiting and open roles</h2>
+        <p><a href="/careers">Visit careers page</a> or email <a href="mailto:support@fmjcareers.com?subject=FMJ%20Capitals%20-%20Careers">support@fmjcareers.com</a>.</p>
+        <p>Include role interest, location, and a short introduction.</p>
+      </article>
+      <article class="card">
+        <div class="kicker">General support</div>
+        <h2>Existing clients & partners</h2>
+        <p><a href="mailto:support@fmjcareers.com?subject=FMJ%20Capitals%20-%20General%20Enquiry">support@fmjcareers.com</a></p>
+        <p>For account updates, documentation requests, or partnership discussions.</p>
+      </article>
+    </section>
+
+    <section class="faq">
+      <div class="kicker">Frequently asked questions</div>
+      <h3>Before you reach out</h3>
+      <div class="faq-item"><strong>What should I include in a first email?</strong><p>Goals, constraints, timeline, and whether you prefer managed portfolios or advisory support.</p></div>
+      <div class="faq-item"><strong>Do you work with remote clients?</strong><p>Yes. We support both local and international clients through a structured digital communication workflow.</p></div>
+      <div class="faq-item"><strong>How quickly do you respond?</strong><p>We aim to reply within business hours and prioritize urgent client matters.</p></div>
+    </section>
+  </main>
+</body>
+</html>

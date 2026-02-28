@@ -13,11 +13,14 @@ from sqlalchemy import create_engine, text
 load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
-if not SUPABASE_URL:
-    raise RuntimeError("SUPABASE_URL is not set in environment variables")
 
-# Supabase → Postgres connection string
-engine = create_engine(SUPABASE_URL, connect_args={"sslmode": "require"})
+if SUPABASE_URL:
+    # Supabase → Postgres connection string
+    engine = create_engine(SUPABASE_URL, connect_args={"sslmode": "require"})
+else:
+    # Local/dev fallback so app pages can still render without DB credentials.
+    # Database-backed features will simply return no data or raise query errors.
+    engine = create_engine("sqlite+pysqlite:///:memory:")
 
 
 # -------------------------------------------------------------
