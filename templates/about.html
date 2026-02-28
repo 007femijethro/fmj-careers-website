@@ -1,99 +1,20 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>About FMJ Capitals</title>
-  <style>
-    body{margin:0;font-family:'Open Sans',system-ui;background:#fff5f8;color:#111827}
-    .wrap{max-width:1120px;margin:0 auto;padding:28px 20px 54px}
-    .hero,.card,.timeline,.quote{background:#fff;border:1px solid rgba(244,114,182,.35);border-radius:18px}
-    .hero{padding:26px;box-shadow:0 20px 45px rgba(236,72,153,.15)}
-    h1,h2,h3{font-family:'Montserrat',system-ui;margin:0 0 10px}
-    p{color:#6b7280;line-height:1.7;margin:0}
-    .kicker{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#9ca3af;margin-bottom:8px}
-    .muted{color:#9ca3af}
-    .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:14px}
-    .stat{padding:14px;border-radius:14px;background:#fff7fb;border:1px solid rgba(244,114,182,.35)}
-    .stat strong{display:block;font-size:22px;font-family:'Montserrat',system-ui;color:#111827}
-    .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:16px}
-    .card{padding:16px}
-    .card ul{margin:8px 0 0;padding-left:18px;color:#6b7280}
-    .split{display:grid;grid-template-columns:1.2fr 1fr;gap:14px;margin-top:16px}
-    .timeline,.quote{padding:16px}
-    .timeline ul{list-style:none;padding:0;margin:8px 0 0}
-    .timeline li{padding:8px 0;border-bottom:1px dashed rgba(244,114,182,.4);color:#6b7280}
-    .timeline li:last-child{border-bottom:none}
-    .quote p{font-size:18px;color:#374151}
-    .quote small{display:block;margin-top:10px;color:#9ca3af}
-    @media (max-width:980px){.stats{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}.split{grid-template-columns:1fr}}
-  </style>
-</head>
-<body>
-  {% include 'nav.html' %}
-  <main class="wrap">
-    <section class="hero">
-      <div class="kicker">About FMJ Capitals</div>
-      <h1>Built like a global firm, delivered with boutique attention.</h1>
-      <p>FMJ Capitals combines institutional-grade discipline with direct, human advisory support. We focus on process quality, downside awareness, and communication rhythm so clients can make long-term decisions with confidence.</p>
-      <div class="stats" aria-label="Firm highlights">
-        <div class="stat"><strong>Research-first</strong><span class="muted">Every mandate starts with a documented investment thesis.</span></div>
-        <div class="stat"><strong>Risk-led</strong><span class="muted">Portfolio construction balances growth, resilience, and liquidity.</span></div>
-        <div class="stat"><strong>Transparent</strong><span class="muted">Clear reporting and plain-language updates for every client.</span></div>
-        <div class="stat"><strong>Long-term</strong><span class="muted">We optimize for durability, not short-term noise.</span></div>
+{% extends 'base.html' %}
+{% block title %}About | FMJ Trust{% endblock %}
+{% block content %}
+<section class="page-hero">
+  <div class="container"><h1 class="serif display-3">Our Heritage</h1><p class="lead">Client-first stewardship with institutional discipline.</p></div>
+</section>
+<section class="section-pad">
+  <div class="container">
+    <div class="row g-4">
+      <div class="col-lg-7">
+        <h2 class="serif display-5 mb-3">A fiduciary model designed for complex families.</h2>
+        <p>FMJ Trust was built around one belief: wealth should serve people, not distract them. Our advisors coordinate with attorneys, tax professionals, and trustees to create continuity and clarity across generations.</p>
       </div>
-    </section>
-
-    <section id="clients" class="grid">
-      <article class="card">
-        <div class="kicker">Mission</div>
-        <h2>Clarity over complexity</h2>
-        <p>We simplify hard investment decisions with repeatable frameworks.</p>
-        <ul>
-          <li>Evidence-based portfolio decisions</li>
-          <li>Explicit risk boundaries</li>
-          <li>Consistent review cadence</li>
-        </ul>
-      </article>
-      <article class="card">
-        <div class="kicker">Culture</div>
-        <h2>High standards + support</h2>
-        <p>We expect rigor, ownership, and teamwork across functions.</p>
-        <ul>
-          <li>Direct communication</li>
-          <li>Merit-driven opportunity</li>
-          <li>Continuous learning mindset</li>
-        </ul>
-      </article>
-      <article class="card">
-        <div class="kicker">Who we serve</div>
-        <h2>Serious long-term investors</h2>
-        <p>Individuals, founders, executives, and entities requiring strategic discipline.</p>
-        <ul>
-          <li>Families building multi-decade plans</li>
-          <li>Founders balancing concentration risk</li>
-          <li>Groups needing institutional reporting</li>
-        </ul>
-      </article>
-    </section>
-
-    <section class="split">
-      <article class="timeline">
-        <div class="kicker">How we work</div>
-        <h3>Client journey</h3>
-        <ul>
-          <li><strong>1. Discovery:</strong> Objectives, constraints, and risk profile mapping.</li>
-          <li><strong>2. Design:</strong> Portfolio architecture and implementation blueprint.</li>
-          <li><strong>3. Execution:</strong> Deployment with governance checkpoints.</li>
-          <li><strong>4. Optimization:</strong> Ongoing rebalancing and scenario review.</li>
-        </ul>
-      </article>
-      <aside class="quote">
-        <div class="kicker">Our philosophy</div>
-        <p>“Great outcomes are usually the result of consistent behavior, not dramatic predictions.”</p>
-        <small>FMJ Capitals Investment Team</small>
-      </aside>
-    </section>
-  </main>
-</body>
-</html>
+      <div class="col-lg-5">
+        <img class="w-100" src="https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=900&q=80" alt="Historic architecture">
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

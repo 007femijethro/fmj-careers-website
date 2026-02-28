@@ -1,145 +1,18 @@
-<div style="max-width: 700px; margin: 30px auto; padding: 40px; background-color: #ffffff; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.06);">
-  <h4 style="text-align: center; font-size: 24px; font-family: 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin-bottom: 24px;">
-    APPLICATION FORM
-  </h4>
-
-  <form action="/job/{{ job['id'] }}/apply" method="post">
-    <!-- Full name -->
-    <div class="mb-2" style="margin-bottom: 16px;">
-      <label style="font-weight: 600; display: block; margin-bottom: 4px;">Full Name</label>
-      <input
-        type="text"
-        name="full_name"
-        required
-        placeholder="Enter your full name"
-        style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;"
-      />
-    </div>
-
-    <!-- Email -->
-    <div class="mb-2" style="margin-bottom: 16px;">
-      <label style="font-weight: 600; display: block; margin-bottom: 4px;">Email</label>
-      <input
-        type="email"
-        name="email"
-        required
-        placeholder="you@example.com"
-        style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;"
-      />
-    </div>
-
-    <!-- Phone -->
-    <div class="mb-2" style="margin-bottom: 16px;">
-      <label style="font-weight: 600; display: block; margin-bottom: 4px;">Phone Number</label>
-      <div style="display: flex; gap: 8px; align-items: center;">
-        <input
-          type="text"
-          name="country_code"
-          required
-          value="1"
-          style="width: 80px; padding: 10px 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; text-align: center;"
-        />
-        <input
-          type="tel"
-          name="phone_number"
-          required
-          placeholder="Phone number"
-          style="flex: 1; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;"
-        />
-      </div>
-      <small style="display:block; margin-top: 4px; font-size: 12px; color:#6b7280;">
-        Country code (e.g. 234) + phone number.
-      </small>
-    </div>
-
-    <!-- Location: City / State / Country -->
-    <div class="mb-2" style="margin-bottom: 16px;">
-      <label style="font-weight: 600; display: block; margin-bottom: 4px;">Location</label>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px;">
-        <input
-          type="text"
-          name="city"
-          required
-          placeholder="City"
-          style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;"
-        />
-        <input
-          type="text"
-          name="state"
-          required
-          placeholder="State / Region"
-          style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;"
-        />
-        <input
-          type="text"
-          name="country"
-          required
-          placeholder="Country"
-          style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;"
-        />
-      </div>
-    </div>
-
-    <!-- LinkedIn -->
-    <div class="mb-2" style="margin-bottom: 16px;">
-      <label style="font-weight: 600; display: block; margin-bottom: 4px;">LinkedIn URL (optional)</label>
-      <input
-        type="url"
-        name="linkedin_url"
-        placeholder="https://www.linkedin.com/in/your-profile"
-        style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;"
-      />
-    </div>
-
-    <!-- Education -->
-    <div class="mb-2" style="margin-bottom: 16px;">
-      <label style="font-weight: 600; display: block; margin-bottom: 4px;">Education</label>
-      <textarea
-        name="education"
-        rows="3"
-        placeholder="Summarise your education"
-        style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; resize: vertical;"
-      ></textarea>
-    </div>
-
-    <!-- Work experience -->
-    <div class="mb-2" style="margin-bottom: 16px;">
-      <label style="font-weight: 600; display: block; margin-bottom: 4px;">Work Experience</label>
-      <textarea
-        name="work_experience"
-        rows="4"
-        placeholder="Describe your relevant experience"
-        style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; resize: vertical;"
-      ></textarea>
-    </div>
-
-    <!-- Cover letter (kept for backwards compatibility) -->
-    <div class="mb-2" style="margin-bottom: 16px;">
-      <label style="font-weight: 600; display: block; margin-bottom: 4px;">Cover Letter (optional)</label>
-      <textarea
-        name="cover_letter"
-        rows="4"
-        placeholder="Write your cover letter"
-        style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; resize: vertical;"
-      ></textarea>
-    </div>
-
-    <!-- Resume path (kept as form field; backend still reads resume_path from form) -->
-    <div class="mb-2" style="margin-bottom: 20px;">
-      <label style="font-weight: 600; display: block; margin-bottom: 4px;">Upload Resume</label>
-      <input
-        type="file"
-        name="resume_path"
-        style="width: 100%; padding: 8px 0; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;"
-      />
-    </div>
-
-    <div style="text-align: center; margin-top: 20px;">
-      <input
-        type="submit"
-        value="Submit Application"
-        style="background: linear-gradient(135deg, #2563eb, #0ea5e9); color: #ffffff; border: none; padding: 10px 32px; border-radius: 999px; cursor: pointer; font-size: 14px; font-weight: 600;"
-      />
-    </div>
-  </form>
-</div>
+<form action="/job/{{ job['id'] }}/apply" method="POST" class="card-clean p-4 text-start" enctype="multipart/form-data">
+  <h3 class="serif mb-3">Apply for this position</h3>
+  <div class="row g-3">
+    <div class="col-md-6"><label class="form-label">Full Name</label><input required name="full_name" class="form-control"></div>
+    <div class="col-md-6"><label class="form-label">Email</label><input required type="email" name="email" class="form-control"></div>
+    <div class="col-md-4"><label class="form-label">Country Code</label><input name="country_code" class="form-control" placeholder="+1"></div>
+    <div class="col-md-8"><label class="form-label">Phone Number</label><input name="phone_number" class="form-control"></div>
+    <div class="col-md-4"><label class="form-label">City</label><input name="city" class="form-control"></div>
+    <div class="col-md-4"><label class="form-label">State</label><input name="state" class="form-control"></div>
+    <div class="col-md-4"><label class="form-label">Country</label><input name="country" class="form-control"></div>
+    <div class="col-12"><label class="form-label">LinkedIn URL</label><input type="url" name="linkedin_url" class="form-control"></div>
+    <div class="col-12"><label class="form-label">Education</label><textarea name="education" rows="2" class="form-control"></textarea></div>
+    <div class="col-12"><label class="form-label">Work Experience</label><textarea name="work_experience" rows="3" class="form-control"></textarea></div>
+    <div class="col-12"><label class="form-label">Cover Letter</label><textarea name="cover_letter" rows="3" class="form-control"></textarea></div>
+    <div class="col-12"><label class="form-label">Resume</label><input type="file" name="resume_path" class="form-control"></div>
+  </div>
+  <button class="btn btn-gold mt-4" type="submit">Submit Application</button>
+</form>
