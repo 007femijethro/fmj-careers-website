@@ -1,11 +1,71 @@
 {% extends 'base.html' %}
-{% block title %}Client Promise | FMJ Trust{% endblock %}
+{% block title %}For OMOLOLU | FMJ Trust{% endblock %}
 {% block content %}
-<section class="section-pad text-center">
+<section class="hero d-flex align-items-center" style="min-height: 60vh; background: linear-gradient(120deg, rgba(15,40,64,.84), rgba(176,138,87,.55)), url('https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&w=1800&q=80') center/cover;">
+  <div class="container py-5 text-white text-center">
+    <p class="eyebrow text-white-50">A Hidden Note</p>
+    <h1 class="display-2 serif fw-semibold">For My OMOLOLU</h1>
+    <p class="lead col-lg-8 mx-auto">If you found this page, you found my heart. I made this little corner of the internet just for you.</p>
+  </div>
+</section>
+
+<section class="section-pad bg-light-subtle">
   <div class="container">
-    <p class="eyebrow">Our Promise</p>
-    <h1 class="serif display-2">We love helping families thrive.</h1>
-    <p class="lead">Every relationship is built on discretion, discipline, and genuine care.</p>
+    <div class="row justify-content-center">
+      <div class="col-lg-5 text-center">
+        <p class="eyebrow mb-3">My Queen, OMOLOLU</p>
+        <img src="{{ url_for('static', filename='luv.jpg') }}" alt="OMOLOLU" class="img-fluid rounded-4 shadow-sm" style="max-height: 560px; object-fit: cover; width: 100%;">
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section-pad bg-light-subtle pt-0">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-9">
+        <div class="card card-clean shadow-sm">
+          <div class="card-body p-4 p-lg-5">
+            <p class="eyebrow mb-2">My Sweet Message</p>
+            <h2 class="serif display-5 mb-3">Happy Birthday in Advance, OMOLOLU 🎂</h2>
+            <p>Before your special day arrives, I want you to know how deeply you are loved. You are my peace after long days, my smile in quiet moments, and my favorite part of every future I imagine.</p>
+            <p>You make ordinary days feel beautiful. Your kindness, your laugh, and your heart are gifts I thank God for every day. Loving you is easy; celebrating you is an honor.</p>
+            <p class="mb-0">May this coming birthday bring you joy that overflows, dreams that unfold, and a year filled with soft mornings, answered prayers, and endless love — especially mine. 💖</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section-pad">
+  <div class="container">
+    <div class="row g-4 justify-content-center">
+      <div class="col-md-5">
+        <div class="card card-clean h-100">
+          <div class="card-body p-4">
+            <p class="eyebrow mb-2">What I Promise You</p>
+            <ul class="mb-0 ps-3">
+              <li class="mb-2">To choose you in every season.</li>
+              <li class="mb-2">To pray with you and for you.</li>
+              <li class="mb-2">To protect your smile and your peace.</li>
+              <li>To keep loving you louder each year.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-5">
+        <div class="card card-clean h-100">
+          <div class="card-body p-4 d-flex flex-column justify-content-between">
+            <div>
+              <p class="eyebrow mb-2">A Birthday Wish</p>
+              <p class="mb-0">May your next chapter be full of favor, laughter, good health, and beautiful surprises. You deserve the gentlest love and the brightest future.</p>
+            </div>
+            <p class="serif h4 mt-4 mb-0">Forever yours, always. ❤️</p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 {% endblock %}
