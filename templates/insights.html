@@ -1,67 +1,23 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Insights | FMJ Capitals</title>
-  <style>
-    body{margin:0;font-family:'Open Sans',system-ui;background:#fff5f8;color:#111827}
-    .wrap{max-width:1120px;margin:0 auto;padding:28px 20px 54px}
-    .hero,.post,.newsletter{background:#fff;border:1px solid rgba(244,114,182,.35);border-radius:18px}
-    .hero{padding:26px;box-shadow:0 20px 45px rgba(236,72,153,.15)}
-    .list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:16px}
-    .post{padding:16px}
-    h1,h2,h3{font-family:'Montserrat',system-ui;margin:0 0 8px}
-    p{color:#6b7280;line-height:1.7;margin:0}
-    .kicker{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#9ca3af;margin-bottom:6px}
-    .meta{font-size:12px;color:#9ca3af;margin-top:8px}
-    .newsletter{margin-top:16px;padding:18px;background:linear-gradient(135deg,#fff,#fff7fb)}
-    .cta{display:inline-block;margin-top:10px;padding:9px 14px;border-radius:999px;background:#ec4899;color:#fff;text-decoration:none;font-weight:600}
-    @media (max-width:900px){.list{grid-template-columns:1fr}}
-  </style>
-</head>
-<body>
-  {% include 'nav.html' %}
-  <main class="wrap">
-    <section class="hero">
-      <div class="kicker">Insights</div>
-      <h1>Practical intelligence for disciplined investing.</h1>
-      <p>Our research notes are designed to help clients stay focused on process quality, capital preservation, and long-term compounding.</p>
-    </section>
-
-    <section class="list">
-      <article class="post">
-        <div class="kicker">Foundations</div>
-        <h2>Why process beats prediction</h2>
-        <p>A durable framework, reviewed over time, generally outperforms reactive decision-making based on headlines.</p>
-        <div class="meta">8 min read · Portfolio governance</div>
-      </article>
-      <article class="post">
-        <div class="kicker">Risk</div>
-        <h2>Designing portfolios for uncertainty</h2>
-        <p>Scenario planning and risk budgets create resilience when outcomes are non-linear.</p>
-        <div class="meta">10 min read · Risk management</div>
-      </article>
-      <article class="post">
-        <div class="kicker">Behavior</div>
-        <h2>How to remain consistent during volatility</h2>
-        <p>Pre-commitment rules and decision hygiene can reduce emotion-driven mistakes.</p>
-        <div class="meta">6 min read · Investor behavior</div>
-      </article>
-      <article class="post">
-        <div class="kicker">Implementation</div>
-        <h2>Rebalancing without overtrading</h2>
-        <p>A policy-led approach can improve discipline and preserve signal quality.</p>
-        <div class="meta">7 min read · Execution</div>
-      </article>
-    </section>
-
-    <section class="newsletter">
-      <div class="kicker">Stay updated</div>
-      <h3>Receive monthly strategy commentary</h3>
-      <p>Get concise updates on portfolio construction, market structure shifts, and planning frameworks.</p>
-      <a class="cta" href="mailto:support@fmjcareers.com?subject=FMJ%20Capitals%20-%20Insights%20Subscription">Request insights subscription</a>
-    </section>
-  </main>
-</body>
-</html>
+{% extends 'base.html' %}
+{% block title %}Insights | FMJ Trust{% endblock %}
+{% block content %}
+<section class="page-hero"><div class="container"><h1 class="serif display-3">Insights</h1></div></section>
+<section class="section-pad">
+  <div class="container">
+    <div class="row g-4">
+      {% for title, img in [
+        ('2026 Market Outlook: Staying Disciplined Through Policy Cycles','https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1000&q=80'),
+        ('Family Governance in a Multi-Generational Enterprise','https://images.unsplash.com/photo-1559526324-593bc073d938?auto=format&fit=crop&w=1000&q=80'),
+        ('Trust Structures for Concentrated Equity Holders','https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1000&q=80')
+      ] %}
+      <div class="col-lg-4">
+        <div class="card-clean h-100">
+          <img src="{{ img }}" class="w-100" style="height:220px;object-fit:cover" alt="Insight image">
+          <div class="p-3"><h4 class="serif">{{ title }}</h4><a href="#" class="text-decoration-none">Read article →</a></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}
