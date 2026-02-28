@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Investment Solutions | FMJ Capitals</title>
+  <style>
+    body{margin:0;font-family:'Open Sans',system-ui;background:#fff5f8;color:#111827}
+    .wrap{max-width:1120px;margin:0 auto;padding:28px 20px 54px}
+    .hero,.card,.band{background:#fff;border:1px solid rgba(244,114,182,.35);border-radius:18px}
+    .hero{padding:26px;box-shadow:0 20px 45px rgba(236,72,153,.15)}
+    h1,h2,h3{font-family:'Montserrat',system-ui;margin:0 0 10px}
+    p{color:#6b7280;line-height:1.7;margin:0}
+    .kicker{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#9ca3af;margin-bottom:8px}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:16px}
+    .card{padding:16px}
+    ul{margin:8px 0 0;padding-left:18px;color:#6b7280}
+    .band{margin-top:16px;padding:18px;background:linear-gradient(135deg,#fff,#fff7fb)}
+    .band-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:10px}
+    .mini{padding:12px;border-radius:12px;border:1px solid rgba(244,114,182,.35);background:#fff}
+    @media (max-width:980px){.grid,.band-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  {% include 'nav.html' %}
+  <main class="wrap">
+    <section class="hero">
+      <div class="kicker">Solutions</div>
+      <h1>Enterprise-quality investment solutions for changing market conditions.</h1>
+      <p>Our offerings are modular: clients can engage for full portfolio management, strategic advisory, or focused planning projects. Every engagement is anchored in risk governance and execution discipline.</p>
+    </section>
+
+    <section id="process" class="grid">
+      <article class="card">
+        <div class="kicker">Managed portfolios</div>
+        <h2>End-to-end portfolio management</h2>
+        <ul>
+          <li>Investment policy and mandate definition</li>
+          <li>Strategic and tactical asset allocation</li>
+          <li>Rebalancing framework and drift controls</li>
+          <li>Quarterly risk/performance reporting</li>
+        </ul>
+      </article>
+      <article class="card">
+        <div class="kicker">Advisory</div>
+        <h2>Decision support for major financial moves</h2>
+        <ul>
+          <li>Scenario planning for liquidity events</li>
+          <li>Capital deployment sequencing</li>
+          <li>Concentration risk mitigation plans</li>
+          <li>Cash reserve and runway strategy</li>
+        </ul>
+      </article>
+      <article class="card">
+        <div class="kicker">Institutional process</div>
+        <h2>Operating cadence and governance</h2>
+        <ul>
+          <li>Monthly monitoring dashboard</li>
+          <li>Quarterly review committee process</li>
+          <li>Annual strategy reset and stress tests</li>
+          <li>Exception handling playbooks</li>
+        </ul>
+      </article>
+      <article class="card">
+        <div class="kicker">Client experience</div>
+        <h2>Communication built for clarity</h2>
+        <ul>
+          <li>Concise executive-style updates</li>
+          <li>Clear action items and decision memos</li>
+          <li>Named relationship contact</li>
+          <li>Fast support for urgent requests</li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="band">
+      <div class="kicker">Service model</div>
+      <h3>How engagements are structured</h3>
+      <div class="band-grid">
+        <div class="mini"><strong>Starter</strong><p>Portfolio diagnostic and roadmap for clients beginning formal investment governance.</p></div>
+        <div class="mini"><strong>Core</strong><p>Ongoing managed service with implementation, monitoring, and review cycles.</p></div>
+        <div class="mini"><strong>Strategic</strong><p>Advanced mandate with custom analytics, deeper scenario design, and bespoke policy rules.</p></div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

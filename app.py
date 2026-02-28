@@ -1503,16 +1503,45 @@ def health():
     return jsonify({"ok": True, "time": datetime.utcnow().isoformat()})
 
 
+def safe_get_jobs() -> List[Dict[str, Any]]:
+    """Return jobs, but gracefully degrade to empty list when DB is unavailable."""
+    try:
+        return get_jobs()
+    except Exception:
+        logger.exception("Unable to fetch jobs; rendering page with empty jobs list")
+        return []
+
+
 @app.route("/")
 def home():
-    jobs = get_jobs()
+    jobs = safe_get_jobs()
     resp = make_response(render_template("home.html", jobs=jobs))
     return resp
 
 
+@app.route("/about")
+def about():
+    return render_template("about.html")
+
+
+@app.route("/solutions")
+def solutions():
+    return render_template("solutions.html")
+
+
+@app.route("/insights")
+def insights():
+    return render_template("insights.html")
+
+
+@app.route("/contact")
+def contact():
+    return render_template("contact.html")
+
+
 @app.route("/careers")
 def careers():
-    jobs = get_jobs()
+    jobs = safe_get_jobs()
     return render_template("careers.html", jobs=jobs)
 
 
