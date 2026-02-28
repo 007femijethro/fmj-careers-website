@@ -2,201 +2,202 @@
   .site-header {
     position: sticky;
     top: 0;
-    z-index: 50;
-    background: rgba(255, 245, 248, 0.96); /* light pink */
-    backdrop-filter: blur(16px);
-    border-bottom: 1px solid rgba(244, 114, 182, 0.4);
+    z-index: 90;
+    background: rgba(250, 249, 246, 0.97);
+    border-bottom: 1px solid #d9d4c8;
+    backdrop-filter: blur(8px);
+  }
+
+  .top-strip {
+    background: #1f2f46;
+    color: #f7f4ee;
+    font-family: 'Open Sans', system-ui, sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .top-strip-inner,
+  .nav-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-inline: 22px;
+  }
+
+  .top-strip-inner {
+    padding-block: 8px;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .top-strip a {
+    color: #f7f4ee;
+    text-decoration: none;
+  }
+
+  .top-strip a:hover {
+    text-decoration: underline;
   }
 
   .nav-inner {
-    max-width: 1120px;
-    margin: 0 auto;
-    padding: 10px 20px;
+    padding-block: 14px;
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    gap: 16px;
-  }
-
-  .nav-left {
-    display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 20px;
   }
 
   .nav-logo {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     text-decoration: none;
   }
 
   .nav-logo img {
-    width: 32px;
-    height: 32px;
-    border-radius: 999px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
     object-fit: cover;
+    border: 1px solid #c8bca5;
   }
 
   .nav-logo-text {
-    font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 18px;
-    font-weight: 700;
-    letter-spacing: 0.03em;
-    color: #111827;
-    text-transform: uppercase;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 21px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: #22324a;
   }
 
   .nav-tagline {
+    font-family: 'Open Sans', system-ui, sans-serif;
     font-size: 11px;
-    color: #6b7280;
-    font-family: 'Open Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #6d5f4a;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
   .nav-links {
     display: flex;
     align-items: center;
-    gap: 18px;
-    font-size: 14px;
-    font-family: 'Open Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    gap: 22px;
+    font-family: 'Open Sans', system-ui, sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.02em;
   }
 
   .nav-links a {
     text-decoration: none;
-    color: #4b5563;
-    opacity: 0.9;
-    transition: opacity 0.2s ease, color 0.2s ease;
-    white-space: nowrap;
+    color: #22324a;
   }
 
   .nav-links a:hover {
-    opacity: 1;
-    color: #111827;
-  }
-
-  .nav-links .nav-pill {
-    padding: 4px 9px;
-    border-radius: 999px;
-    border: 1px solid rgba(244, 114, 182, 0.7);
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    background: rgba(255, 240, 246, 0.95);
+    color: #7c643e;
   }
 
   .nav-cta {
     text-decoration: none;
-    font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 13px;
-    font-weight: 600;
+    border: 1px solid #22324a;
+    color: #22324a;
     padding: 8px 14px;
     border-radius: 999px;
-    background: linear-gradient(135deg, #ec4899, #db2777); /* pink */
-    color: #ffffff;
-    white-space: nowrap;
-    box-shadow: 0 10px 25px rgba(236, 72, 153, 0.35);
-    border: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .nav-cta span {
-    font-size: 16px;
-    line-height: 1;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-family: 'Open Sans', system-ui, sans-serif;
+    font-weight: 700;
   }
 
   .nav-cta:hover {
-    filter: brightness(1.05);
-  }
-
-  .nav-right {
-    display: flex;
-    align-items: center;
-    gap: 14px;
+    background: #22324a;
+    color: #f7f4ee;
   }
 
   .nav-menu-toggle {
     display: none;
-    border: none;
-    background: transparent;
-    color: #4b5563;
-    font-size: 20px;
+    width: 36px;
+    height: 36px;
+    border: 1px solid #b8ac95;
+    background: #f9f6ef;
+    border-radius: 8px;
+    font-size: 17px;
+    color: #22324a;
     cursor: pointer;
   }
 
-  /* Mobile layout */
-  @media (max-width: 768px) {
-    .nav-inner {
-      padding-inline: 16px;
+  @media (max-width: 900px) {
+    .nav-menu-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    /* Hide links by default on mobile */
     .nav-links {
       display: none;
       position: absolute;
-      top: 100%;
       left: 0;
       right: 0;
-      background: #ffffff;
-      padding: 10px 16px 12px;
+      top: 100%;
+      background: #fbf9f3;
+      border-bottom: 1px solid #d8d2c4;
       flex-direction: column;
       align-items: flex-start;
-      gap: 10px;
-      border-bottom: 1px solid rgba(244, 114, 182, 0.4);
+      gap: 12px;
+      padding: 14px 18px;
     }
 
-    .nav-links a {
-      padding: 4px 0;
-    }
-
-    /* When menu is open */
     .nav-links.nav-open {
       display: flex;
     }
+  }
 
-    .nav-menu-toggle {
-      display: inline-flex;
+  @media (max-width: 660px) {
+    .top-strip {
+      display: none;
     }
 
-    .nav-right {
-      gap: 8px;
+    .nav-tagline,
+    .nav-cta {
+      display: none;
     }
 
-    /* you can hide or shrink the CTA on very tiny screens if needed */
+    .nav-inner,
+    .top-strip-inner {
+      padding-inline: 14px;
+    }
   }
 </style>
 
 <header class="site-header">
-  <div class="nav-inner">
-    <div class="nav-left">
-      <a href="/" class="nav-logo">
-        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="FMJ Capitals logo">
-        <div>
-          <div class="nav-logo-text">FMJ Capitals</div>
-          <div class="nav-tagline">Investment Management & Advisory</div>
-        </div>
-      </a>
+  <div class="top-strip">
+    <div class="top-strip-inner">
+      <span>Legacy Planning · Investment Advisory · Family Office Services</span>
+      <a href="mailto:support@fmjcareers.com">support@fmjcareers.com</a>
     </div>
+  </div>
+
+  <div class="nav-inner">
+    <a href="/" class="nav-logo">
+      <img src="{{ url_for('static', filename='logo.jpg') }}" alt="FMJ Capitals logo">
+      <div>
+        <div class="nav-logo-text">FMJ Capitals</div>
+        <div class="nav-tagline">Stewardship for generations</div>
+      </div>
+    </a>
 
     <nav class="nav-links">
       <a href="/about">About</a>
-      <a href="/solutions">Investment solutions</a>
-      <a href="/solutions#process">Our process</a>
-      <a href="/about#clients">Who we serve</a>
+      <a href="/solutions">Services</a>
       <a href="/insights">Insights</a>
-      <a href="/careers#culture">Careers</a>
-      <a href="/careers" class="nav-pill">Open roles</a>
+      <a href="/careers">Careers</a>
+      <a href="/contact">Contact</a>
+      <a href="/contact" class="nav-cta">Speak with an advisor</a>
     </nav>
 
-    <div class="nav-right">
-      <a href="/contact" class="nav-cta">
-        Talk to our team <span>↗</span>
-      </a>
-      <button class="nav-menu-toggle" type="button" aria-label="Open navigation">
-        ☰
-      </button>
-    </div>
+    <button class="nav-menu-toggle" type="button" aria-label="Open navigation">☰</button>
   </div>
 </header>
 

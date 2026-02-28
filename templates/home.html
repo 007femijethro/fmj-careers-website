@@ -2,562 +2,389 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>FMJ Capitals | Investment Management & Advisory</title>
+  <title>FMJ Capitals | Private Wealth & Advisory</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="FMJ Capitals is an investment management and advisory firm focused on research-driven, risk-aware portfolios for long-term investors.">
+  <meta name="description" content="FMJ Capitals offers tailored investment advisory, legacy planning, and long-term stewardship for individuals and families.">
 
-  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-
-  <!-- Favicon (optional, adjust filenames as needed) -->
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon-32.png') }}">
 
   <style>
     :root {
-      --bg: #fff5f8;
-      --bg-elevated: #ffffff;
-      --card: #ffffff;
-      --card-soft: #fff7fb;
-      --border-subtle: rgba(244, 114, 182, 0.35);
-      --border-strong: rgba(236, 72, 153, 0.85);
-      --primary: #ec4899;
-      --primary-soft: rgba(236, 72, 153, 0.12);
-      --accent: #db2777;
-      --accent-soft: rgba(219, 39, 119, 0.18);
-      --text-main: #111827;
-      --text-muted: #6b7280;
-      --text-soft: #9ca3af;
-      --text-strong: #030712;
-      --radius-card: 18px;
-      --radius-pill: 999px;
-      --shadow-soft: 0 20px 50px rgba(236, 72, 153, 0.18);
-      --shadow-button: 0 16px 40px rgba(236, 72, 153, 0.35);
-      --container-width: 1120px;
+      --navy: #22324a;
+      --navy-deep: #182537;
+      --gold: #8f7651;
+      --bg: #f8f5ee;
+      --bg-soft: #fdfbf6;
+      --border: #ddd6c8;
+      --text: #2f2f2f;
+      --muted: #6d655a;
+      --max-width: 1200px;
+      --radius: 16px;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
-      padding: 0;
-      min-height: 100vh;
-      background:
-        radial-gradient(circle at top left, rgba(252, 231, 243, 0.9), transparent 55%),
-        radial-gradient(circle at bottom right, rgba(251, 207, 232, 0.9), transparent 55%),
-        #fff5f8;
-      color: var(--text-main);
-      font-family: 'Open Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      display: flex;
-      flex-direction: column;
+      color: var(--text);
+      background: var(--bg);
+      font-family: 'Open Sans', system-ui, sans-serif;
+      line-height: 1.6;
     }
 
     main {
-      flex: 1;
+      overflow: hidden;
     }
 
-    .page-shell {
-      max-width: var(--container-width);
+    .shell {
+      max-width: var(--max-width);
       margin: 0 auto;
-      padding: 28px 20px 48px;
+      padding: 26px 22px 58px;
     }
 
-    /* HERO */
     .hero {
+      background: var(--bg-soft);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      overflow: hidden;
       display: grid;
-      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-      gap: 28px;
-      align-items: center;
-      padding-top: 12px;
-      padding-bottom: 36px;
+      grid-template-columns: 1.15fr 1fr;
+      min-height: 540px;
     }
 
-    .hero-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 4px 11px;
-      border-radius: var(--radius-pill);
-      border: 1px solid var(--border-subtle);
-      background: #fffafc;
+    .hero-copy {
+      padding: 54px 48px 44px;
+      position: relative;
+    }
+
+    .hero-kicker {
+      margin: 0 0 12px;
       font-size: 11px;
+      color: var(--gold);
       text-transform: uppercase;
-      letter-spacing: 0.14em;
-      color: var(--text-muted);
-      margin-bottom: 16px;
+      letter-spacing: 0.16em;
+      font-weight: 700;
     }
 
-    .hero-pill-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 999px;
-      background: var(--primary);
-      box-shadow: 0 0 0 4px var(--primary-soft);
+    .hero h1 {
+      margin: 0 0 16px;
+      font-family: 'Libre Baskerville', Georgia, serif;
+      color: var(--navy-deep);
+      font-size: clamp(33px, 4vw, 58px);
+      line-height: 1.08;
+      letter-spacing: -0.01em;
     }
 
-    .hero-title {
-      font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      font-size: clamp(30px, 4.2vw, 40px);
-      line-height: 1.1;
-      color: var(--text-strong);
-      margin: 0 0 14px;
-    }
-
-    .hero-highlight {
-      background: linear-gradient(135deg, #ec4899, #db2777);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-    }
-
-    .hero-subtitle {
-      font-size: 15px;
-      color: var(--text-muted);
-      max-width: 520px;
-      margin: 0 0 18px;
-    }
-
-    .hero-checklist {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 8px 16px;
-      margin-bottom: 18px;
-      font-size: 13px;
-      color: var(--text-muted);
-    }
-
-    .hero-check-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .hero-check-icon {
-      width: 18px;
-      height: 18px;
-      border-radius: 999px;
-      border: 1px solid var(--border-strong);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      color: var(--primary);
-      background: #fff;
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 600px;
+      font-size: 16px;
     }
 
     .hero-actions {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
-      align-items: center;
-      margin-bottom: 10px;
+      margin-top: 26px;
     }
 
-    .primary-btn,
-    .ghost-btn {
-      border-radius: var(--radius-pill);
-      padding: 9px 16px;
-      font-size: 13px;
-      font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      font-weight: 600;
-      border: none;
-      cursor: pointer;
+    .btn {
+      text-decoration: none;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 11px;
+      border-radius: 999px;
+      padding: 11px 16px;
+      border: 1px solid transparent;
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      text-decoration: none;
-      white-space: nowrap;
     }
 
-    .primary-btn {
-      background: linear-gradient(135deg, #ec4899, #db2777);
-      color: #ffffff;
-      box-shadow: var(--shadow-button);
+    .btn-primary {
+      background: var(--navy);
+      color: #f7f4ee;
+      border-color: var(--navy);
     }
 
-    .primary-btn span {
-      font-size: 16px;
-      line-height: 1;
+    .btn-secondary {
+      border-color: #b4a385;
+      color: var(--gold);
+      background: transparent;
     }
 
-    .ghost-btn {
-      background: #fff;
-      color: var(--text-main);
-      border: 1px solid var(--border-subtle);
+    .hero-facts {
+      margin-top: 28px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
     }
 
-    .hero-footnote {
-      font-size: 11px;
-      color: var(--text-soft);
-      max-width: 520px;
+    .fact {
+      padding: 11px;
+      border: 1px solid #e2dacb;
+      border-radius: 11px;
+      background: #fcfaf4;
+      font-size: 12px;
+      color: #6a604f;
     }
 
-    .hero-card {
-      border-radius: 22px;
-      background: var(--card);
-      border: 1px solid var(--border-subtle);
-      box-shadow: var(--shadow-soft);
-      padding: 14px;
+    .fact strong {
+      display: block;
+      color: var(--navy);
+      font-size: 24px;
+      font-family: 'Libre Baskerville', Georgia, serif;
+      line-height: 1.1;
     }
 
-    .hero-card-figure {
-      border-radius: 18px;
-      overflow: hidden;
-      border: 1px solid rgba(244, 114, 182, 0.4);
-      min-height: 200px;
-      background: linear-gradient(135deg, #f9a8d4, #fbcfe8);
+    .hero-media {
       position: relative;
+      border-left: 1px solid var(--border);
+      background: #e8e3d7;
     }
 
-    .hero-card-figure img {
+    .hero-media img {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      opacity: 0.85;
-    }
-
-    .hero-metrics {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
-      margin-top: 12px;
-    }
-
-    .hero-metric {
-      border-radius: 14px;
-      padding: 8px 10px;
-      background: #fffafc;
-      border: 1px solid var(--border-subtle);
-      font-size: 11px;
-      color: var(--text-muted);
-    }
-
-    .hero-metric strong {
       display: block;
-      font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      font-size: 12px;
-      color: var(--text-main);
-      margin-bottom: 2px;
     }
-
-    /* SECTIONS */
 
     .section {
-      padding: 14px 0 4px;
+      margin-top: 30px;
     }
 
-    .section-header {
+    .section-head {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      gap: 18px;
+      align-items: end;
+      margin-bottom: 16px;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-family: 'Libre Baskerville', Georgia, serif;
+      color: var(--navy-deep);
+      font-size: clamp(26px, 3vw, 38px);
+      line-height: 1.15;
+    }
+
+    .section-head p {
+      margin: 0;
+      max-width: 520px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .service-card {
+      background: #fbf8f1;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: 190px auto;
+    }
+
+    .service-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .service-body {
+      padding: 15px;
+    }
+
+    .service-body h3 {
+      margin: 0 0 7px;
+      color: var(--navy);
+      font-family: 'Libre Baskerville', Georgia, serif;
+      font-size: 21px;
+    }
+
+    .service-body p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
       gap: 16px;
-      margin-bottom: 12px;
     }
 
-    .section-kicker {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.16em;
-      color: var(--text-soft);
+    .panel {
+      background: #fbf9f3;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
     }
 
-    .section-title {
-      font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      font-size: 20px;
-      color: var(--text-strong);
-      margin: 4px 0 0;
+    .panel h3 {
+      margin: 0 0 9px;
+      color: var(--navy);
+      font-family: 'Libre Baskerville', Georgia, serif;
+      font-size: 27px;
     }
 
-    .section-subtitle {
-      font-size: 13px;
-      color: var(--text-muted);
-      max-width: 430px;
+    .panel p {
+      margin: 0 0 11px;
+      color: var(--muted);
+    }
+
+    .panel ul {
       margin: 0;
+      padding-left: 16px;
+      color: var(--muted);
     }
 
-    .cards-grid-3 {
+    .panel li {
+      margin: 5px 0;
+    }
+
+    .quote-block {
+      background: var(--navy);
+      color: #f8f4ea;
+      border-radius: var(--radius);
+      border: 1px solid #38495f;
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 14px;
+      grid-template-rows: 240px auto;
+      overflow: hidden;
     }
 
-    .cards-grid-2 {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 14px;
+    .quote-block img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.78;
     }
 
-    .info-card {
-      border-radius: var(--radius-card);
-      background: var(--card);
-      border: 1px solid var(--border-subtle);
-      padding: 12px 12px 11px;
-      font-size: 13px;
-      color: var(--text-muted);
+    .quote-body {
+      padding: 18px;
     }
 
-    .info-card-label {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.16em;
-      color: var(--text-soft);
-      margin-bottom: 4px;
+    .quote-body p {
+      margin: 0 0 8px;
+      font-family: 'Libre Baskerville', Georgia, serif;
+      font-size: 21px;
+      line-height: 1.45;
+      color: #f7f3e8;
     }
 
-    .info-card-title {
-      font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      font-size: 15px;
-      margin: 0 0 4px;
-      color: var(--text-main);
-    }
-
-    .info-card-body {
-      margin: 0 0 6px;
-    }
-
-    .info-card-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
+    .quote-body span {
       font-size: 12px;
-      color: var(--text-soft);
-    }
-
-    .info-card-list li {
-      margin: 2px 0;
-      display: flex;
-      gap: 6px;
-    }
-
-    .info-card-list li::before {
-      content: "•";
-      color: var(--primary);
-      margin-top: -1px;
-    }
-
-    /* CLIENTS */
-
-    .clients-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 14px;
-    }
-
-    .client-card {
-      border-radius: var(--radius-card);
-      background: var(--card);
-      border: 1px solid var(--border-subtle);
-      padding: 12px 12px 10px;
-      font-size: 13px;
-      color: var(--text-muted);
-    }
-
-    .client-card h4 {
-      margin: 0 0 4px;
-      font-size: 14px;
-      font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      color: var(--text-main);
-    }
-
-    /* INSIGHTS */
-
-    .insights-layout {
-      display: grid;
-      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-      gap: 14px;
-    }
-
-    .insights-list {
-      border-radius: var(--radius-card);
-      background: var(--card);
-      border: 1px solid var(--border-subtle);
-      padding: 10px 12px;
-      font-size: 12px;
-    }
-
-    .insight-item {
-      padding: 6px 0;
-      border-bottom: 1px dashed rgba(248, 187, 208, 0.9);
-    }
-
-    .insight-item:last-child {
-      border-bottom: none;
-    }
-
-    .insight-kicker {
-      font-size: 11px;
       text-transform: uppercase;
-      letter-spacing: 0.16em;
-      color: var(--text-soft);
-      margin-bottom: 2px;
+      letter-spacing: 0.12em;
+      color: #dac8ab;
+      font-family: 'Open Sans', system-ui, sans-serif;
     }
 
-    .insight-title {
-      font-size: 13px;
-      color: var(--text-main);
-      margin-bottom: 2px;
-    }
-
-    .insight-meta {
-      font-size: 11px;
-      color: var(--text-soft);
-    }
-
-    .insights-cta-card {
-      border-radius: var(--radius-card);
-      background: linear-gradient(135deg, #fdf2f8, #fef2ff);
-      border: 1px solid var(--border-subtle);
-      padding: 12px 12px 11px;
-      font-size: 13px;
-      color: var(--text-muted);
-    }
-
-    .insights-cta-card h4 {
-      margin: 0 0 4px;
-      font-size: 14px;
-      font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      color: var(--text-main);
-    }
-
-    .tag-row {
+    .cta-banner {
+      margin-top: 28px;
+      border-radius: 16px;
+      border: 1px solid #cabb9f;
+      background: linear-gradient(120deg, #f6f0e4, #f9f7ef);
+      padding: 22px;
       display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
       flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 6px;
     }
 
-    .tag-chip {
-      font-size: 11px;
-      padding: 3px 8px;
-      border-radius: var(--radius-pill);
-      border: 1px solid var(--border-subtle);
-      background: #fff;
-      color: var(--text-soft);
+    .cta-banner h3 {
+      margin: 0;
+      font-family: 'Libre Baskerville', Georgia, serif;
+      color: var(--navy);
+      font-size: 29px;
     }
 
-    /* CONTACT & DISCLAIMER */
-
-    .contact-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-      gap: 14px;
-    }
-
-    .contact-card {
-      border-radius: var(--radius-card);
-      background: var(--card);
-      border: 1px solid var(--border-subtle);
-      padding: 12px 12px 10px;
-      font-size: 13px;
-      color: var(--text-muted);
-    }
-
-    .contact-card h4 {
-      margin: 0 0 4px;
+    .cta-banner p {
+      margin: 5px 0 0;
+      color: #6d5f4a;
       font-size: 14px;
-      font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      color: var(--text-main);
     }
 
-    .contact-card a {
-      color: var(--accent);
-      text-decoration: none;
+    .fade-in {
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
     }
 
-    .contact-card a:hover {
-      text-decoration: underline;
+    .fade-in.visible {
+      opacity: 1;
+      transform: none;
     }
-
-    .disclaimer {
-      margin-top: 18px;
-      border-radius: var(--radius-card);
-      background: #fff;
-      border: 1px solid var(--border-subtle);
-      padding: 10px 12px;
-      font-size: 11px;
-      color: var(--text-soft);
-    }
-
-    .disclaimer strong {
-      color: var(--text-main);
-    }
-
-    /* FOOTER */
 
     footer {
-      border-top: 1px solid rgba(248, 187, 208, 0.95);
-      padding: 14px 20px 18px;
-      font-size: 11px;
-      color: var(--text-soft);
-      background: #fffafc;
+      margin-top: 34px;
+      padding: 18px 22px 26px;
+      border-top: 1px solid var(--border);
+      color: #796c56;
+      font-size: 12px;
     }
 
     .footer-inner {
-      max-width: var(--container-width);
+      max-width: var(--max-width);
       margin: 0 auto;
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
       justify-content: space-between;
-      align-items: center;
-    }
-
-    .footer-links {
-      display: flex;
-      flex-wrap: wrap;
       gap: 10px;
     }
 
-    .footer-links a {
-      color: var(--text-soft);
-      text-decoration: none;
-    }
+    @media (max-width: 980px) {
+      .hero,
+      .services-grid,
+      .two-col {
+        grid-template-columns: 1fr;
+      }
 
-    .footer-links a:hover {
-      color: var(--accent);
-    }
-
-    @media (max-width: 900px) {
       .hero {
-        grid-template-columns: minmax(0, 1fr);
+        min-height: auto;
       }
 
-      .hero-card {
-        order: -1;
-      }
-
-      .cards-grid-3,
-      .clients-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .insights-layout,
-      .contact-grid,
-      .cards-grid-2 {
-        grid-template-columns: minmax(0, 1fr);
+      .hero-media {
+        min-height: 320px;
+        border-left: none;
+        border-top: 1px solid var(--border);
       }
     }
 
     @media (max-width: 640px) {
-      .page-shell {
-        padding-inline: 16px;
+      .shell {
+        padding-inline: 14px;
       }
 
-      .cards-grid-3,
-      .clients-grid {
-        grid-template-columns: minmax(0, 1fr);
+      .hero-copy {
+        padding: 24px 18px;
       }
 
-      .hero-actions {
+      .section-head {
         flex-direction: column;
-        align-items: stretch;
+        align-items: flex-start;
       }
 
-      .primary-btn,
-      .ghost-btn {
+      .hero-facts {
+        grid-template-columns: 1fr;
+      }
+
+      .btn {
+        width: 100%;
         justify-content: center;
       }
     }
@@ -567,424 +394,139 @@
   {% include 'nav.html' %}
 
   <main>
-    <div class="page-shell">
-      <!-- HERO -->
-      <section id="top" class="hero">
-        <div>
-          <div class="hero-pill">
-            <span class="hero-pill-dot"></span>
-            FMJ Capitals · Investment firm
-          </div>
-          <h1 class="hero-title">
-            Institutional-style investing,
-            <span class="hero-highlight">designed for real people.</span>
-          </h1>
-          <p class="hero-subtitle">
-            FMJ Capitals is an investment management and advisory firm focused on research-driven,
-            risk-aware portfolios and clear communication, so clients can commit to the long term.
+    <div class="shell">
+      <section class="hero fade-in">
+        <div class="hero-copy">
+          <p class="hero-kicker">Private Wealth Management</p>
+          <h1>Stewarding wealth with perspective, discipline, and purpose.</h1>
+          <p>
+            We partner with individuals, families, and institutions to preserve capital, design thoughtful portfolios,
+            and guide decisions that support long-term goals across generations.
           </p>
-
-          <div class="hero-checklist">
-            <div class="hero-check-item">
-              <div class="hero-check-icon">✓</div>
-              <span>Disciplined, fundamentals-first frameworks</span>
-            </div>
-            <div class="hero-check-item">
-              <div class="hero-check-icon">✓</div>
-              <span>Transparent mandates & reporting</span>
-            </div>
-            <div class="hero-check-item">
-              <div class="hero-check-icon">✓</div>
-              <span>Support for serious, long-term investors</span>
-            </div>
-          </div>
 
           <div class="hero-actions">
-            <a href="mailto:support@fmjcareers.com?subject=FMJ%20Capitals%20-%20Investment%20Enquiry"
-               class="primary-btn">
-              Talk to our team <span>↗</span>
-            </a>
-            <a href="#solutions" class="ghost-btn">
-              View investment solutions
-            </a>
+            <a href="/contact" class="btn btn-primary">Schedule a consultation</a>
+            <a href="/solutions" class="btn btn-secondary">Explore services</a>
           </div>
 
-          <p class="hero-footnote">
-            All investing involves risk, including the possible loss of principal. Nothing on this website
-            is investment advice or a recommendation to buy or sell any security.
-          </p>
+          <div class="hero-facts">
+            <div class="fact"><strong data-counter="3">0</strong>Core advisory pillars</div>
+            <div class="fact"><strong data-counter="25">0</strong>Years combined team experience</div>
+            <div class="fact"><strong data-counter="100">0</strong>% client-first orientation</div>
+          </div>
+        </div>
+        <div class="hero-media">
+          <img src="{{ url_for('static', filename='image1.jpg') }}" alt="Professional advisory discussion">
+        </div>
+      </section>
+
+      <section class="section fade-in">
+        <div class="section-head">
+          <h2>Our services</h2>
+          <p>Comprehensive solutions shaped by your objectives, risk tolerance, and legacy priorities.</p>
         </div>
 
-        <aside class="hero-card" aria-label="Investment snapshot">
-          <div class="hero-card-figure">
-            <img src="{{ url_for('static', filename='image1.jpg') }}"
-                 alt="FMJ Capitals abstract investment visual">
-          </div>
-          <div class="hero-metrics">
-            <div class="hero-metric">
-              <strong>Research-driven process</strong>
-              A written, repeatable framework instead of headline-driven decisions.
+        <div class="services-grid">
+          <article class="service-card">
+            <img src="{{ url_for('static', filename='luv.jpg') }}" alt="Investment planning">
+            <div class="service-body">
+              <h3>Investment Advisory</h3>
+              <p>Strategic allocation, manager selection, and risk-aware portfolio construction.</p>
             </div>
-            <div class="hero-metric">
-              <strong>Aligned with clients</strong>
-              Clear risk profiles, mandates and review schedules agreed upfront.
+          </article>
+
+          <article class="service-card">
+            <img src="{{ url_for('static', filename='sco11.jpg') }}" alt="Family office strategy">
+            <div class="service-body">
+              <h3>Family Office Support</h3>
+              <p>Integrated oversight for liquidity, operations, governance, and long-term planning.</p>
             </div>
+          </article>
+
+          <article class="service-card">
+            <img src="{{ url_for('static', filename='logoo.jpg') }}" alt="Legacy planning">
+            <div class="service-body">
+              <h3>Legacy & Estate Lens</h3>
+              <p>Forward-looking structures designed to protect wealth and align family intentions.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section two-col fade-in">
+        <article class="panel">
+          <h3>How we work with clients</h3>
+          <p>
+            Our process is relationship-led and principle-driven. We begin with context, align on objectives,
+            and implement disciplined portfolios with transparent communication.
+          </p>
+          <ul>
+            <li>Discovery and objective setting</li>
+            <li>Strategic design with explicit risk boundaries</li>
+            <li>Ongoing reviews and adaptive planning</li>
+            <li>Coordinated support with legal and tax advisors</li>
+          </ul>
+        </article>
+
+        <aside class="quote-block">
+          <img src="{{ url_for('static', filename='image1.jpg') }}" alt="City skyline for market perspective">
+          <div class="quote-body">
+            <p>“Enduring wealth management requires both careful judgment and a long view.”</p>
+            <span>FMJ Capitals · Investment Committee</span>
           </div>
         </aside>
       </section>
 
-      <!-- ABOUT -->
-      <section id="about" class="section">
-        <div class="section-header">
-          <div>
-            <div class="section-kicker">Firm overview</div>
-            <h2 class="section-title">Who we are</h2>
-          </div>
-          <p class="section-subtitle">
-            FMJ Capitals partners with individuals, professionals and institutions that want structure,
-            transparency and a realistic approach to markets.
-          </p>
+      <section class="cta-banner fade-in">
+        <div>
+          <h3>Let’s build your long-term strategy.</h3>
+          <p>Speak with FMJ Capitals about your portfolio priorities, planning goals, and family vision.</p>
         </div>
-
-        <div class="cards-grid-3">
-          <article class="info-card">
-            <div class="info-card-label">Philosophy</div>
-            <h3 class="info-card-title">Process over predictions</h3>
-            <p class="info-card-body">
-              Markets are noisy. We focus on asset allocation, risk and behaviour – not trying to guess the next headline.
-            </p>
-            <ul class="info-card-list">
-              <li>Documented, repeatable investment process</li>
-              <li>Focus on risk, drawdowns and liquidity</li>
-              <li>Built to support long-term compounding</li>
-            </ul>
-          </article>
-
-          <article class="info-card">
-            <div class="info-card-label">How we work</div>
-            <h3 class="info-card-title">Partnership & transparency</h3>
-            <p class="info-card-body">
-              We aim to be a long-term partner, not a product. That means honest conversations and clear expectations.
-            </p>
-            <ul class="info-card-list">
-              <li>Clarity on mandates and constraints</li>
-              <li>Simple, transparent fee structures</li>
-              <li>Regular portfolio and risk reviews</li>
-            </ul>
-          </article>
-
-          <article class="info-card">
-            <div class="info-card-label">Focus</div>
-            <h3 class="info-card-title">Preserve, then grow</h3>
-            <p class="info-card-body">
-              We seek to balance protection of capital with the need for growth, anchored in your time horizon.
-            </p>
-            <ul class="info-card-list">
-              <li>Risk-aware portfolio construction</li>
-              <li>Diversified sources of return</li>
-              <li>Encouraging clients to stay invested</li>
-            </ul>
-          </article>
-        </div>
-      </section>
-
-      <!-- SOLUTIONS -->
-      <section id="solutions" class="section">
-        <div class="section-header">
-          <div>
-            <div class="section-kicker">Investment solutions</div>
-            <h2 class="section-title">How we can work with you</h2>
-          </div>
-          <p class="section-subtitle">
-            Flexible ways to engage, depending on whether you want a fully managed portfolio or structured guidance.
-          </p>
-        </div>
-
-        <div class="cards-grid-3">
-          <article class="info-card">
-            <div class="info-card-label">Core offering</div>
-            <h3 class="info-card-title">Managed portfolios</h3>
-            <p class="info-card-body">
-              Multi-asset portfolios designed around your objectives, risk profile and time horizon.
-            </p>
-            <ul class="info-card-list">
-              <li>Risk-profiled model portfolios</li>
-              <li>Strategic & tactical asset allocation</li>
-              <li>Ongoing monitoring and rebalancing</li>
-            </ul>
-          </article>
-
-          <article class="info-card">
-            <div class="info-card-label">Income & stability</div>
-            <h3 class="info-card-title">Income-focused strategies</h3>
-            <p class="info-card-body">
-              For investors prioritising income and capital stability over aggressive growth.
-            </p>
-            <ul class="info-card-list">
-              <li>Quality-oriented income strategies</li>
-              <li>Emphasis on resilience and liquidity</li>
-              <li>Drawdown-sensitive risk management</li>
-            </ul>
-          </article>
-
-          <article class="info-card">
-            <div class="info-card-label">Advisory</div>
-            <h3 class="info-card-title">Portfolio reviews & guidance</h3>
-            <p class="info-card-body">
-              For hands-on investors who value a framework and a second opinion on their portfolio.
-            </p>
-            <ul class="info-card-list">
-              <li>Portfolio diagnostics and stress tests</li>
-              <li>Risk and position-sizing frameworks</li>
-              <li>Educational sessions and playbooks</li>
-            </ul>
-          </article>
-        </div>
-      </section>
-
-      <!-- PROCESS -->
-      <section id="process" class="section">
-        <div class="section-header">
-          <div>
-            <div class="section-kicker">Investment process</div>
-            <h2 class="section-title">From conversation to implementation</h2>
-          </div>
-          <p class="section-subtitle">
-            A clear, documented process helps remove emotion from decisions and keeps everyone aligned.
-          </p>
-        </div>
-
-        <div class="cards-grid-4 cards-grid-2">
-          <div class="cards-grid-2" style="grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px;">
-            <article class="info-card">
-              <div class="info-card-label">Step 1</div>
-              <h3 class="info-card-title">Discover</h3>
-              <p class="info-card-body">
-                Understand your objectives, constraints, risk tolerance, liquidity needs and time frames.
-              </p>
-            </article>
-            <article class="info-card">
-              <div class="info-card-label">Step 2</div>
-              <h3 class="info-card-title">Design</h3>
-              <p class="info-card-body">
-                Build a strategic allocation and risk budget consistent with your goals.
-              </p>
-            </article>
-            <article class="info-card">
-              <div class="info-card-label">Step 3</div>
-              <h3 class="info-card-title">Implement</h3>
-              <p class="info-card-body">
-                Deploy capital with discipline, focusing on execution and costs.
-              </p>
-            </article>
-            <article class="info-card">
-              <div class="info-card-label">Step 4</div>
-              <h3 class="info-card-title">Monitor</h3>
-              <p class="info-card-body">
-                Ongoing monitoring, rebalancing and scheduled reviews to keep you on track.
-              </p>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <!-- WHO WE SERVE -->
-      <section id="clients" class="section">
-        <div class="section-header">
-          <div>
-            <div class="section-kicker">Who we serve</div>
-            <h2 class="section-title">Built for serious investors</h2>
-          </div>
-          <p class="section-subtitle">
-            We work best with clients who value structure, communication and a long-term mindset.
-          </p>
-        </div>
-
-        <div class="clients-grid">
-          <article class="client-card">
-            <h4>Individuals & families</h4>
-            <p>
-              Managing long-term wealth, planning for education, retirement and intergenerational goals.
-            </p>
-          </article>
-          <article class="client-card">
-            <h4>Professionals & founders</h4>
-            <p>
-              Balancing business or career risk with a portfolio that supports stability and future plans.
-            </p>
-          </article>
-          <article class="client-card">
-            <h4>Entities & groups</h4>
-            <p>
-              Supporting companies, investment clubs and other entities that require documentation and reporting.
-            </p>
-          </article>
-        </div>
-      </section>
-
-      <!-- INSIGHTS -->
-      <section id="insights" class="section">
-        <div class="section-header">
-          <div>
-            <div class="section-kicker">Insights</div>
-            <h2 class="section-title">Helping clients stay grounded</h2>
-          </div>
-          <p class="section-subtitle">
-            We focus on simple, practical frameworks so clients can ignore noise and stay with their plan.
-          </p>
-        </div>
-
-        <div class="insights-layout">
-          <div class="insights-list">
-            <article class="insight-item">
-              <div class="insight-kicker">Foundations</div>
-              <div class="insight-title">Why a written investment plan matters more than forecasts</div>
-              <div class="insight-meta">Concept · Process & behaviour</div>
-            </article>
-            <article class="insight-item">
-              <div class="insight-kicker">Risk</div>
-              <div class="insight-title">Thinking in ranges instead of single-point predictions</div>
-              <div class="insight-meta">Concept · Risk management</div>
-            </article>
-            <article class="insight-item">
-              <div class="insight-kicker">Implementation</div>
-              <div class="insight-title">Rebalancing and staying invested through market cycles</div>
-              <div class="insight-meta">Concept · Portfolio design</div>
-            </article>
-          </div>
-
-          <aside class="insights-cta-card">
-            <h4>Notes & client updates</h4>
-            <p>
-              We periodically share commentary and educational notes designed for clients and serious prospects.
-            </p>
-            <p style="margin-bottom: 6px;">
-              To receive future updates, send us an email with a short note about your objectives and interest in FMJ Capitals.
-            </p>
-            <a href="mailto:support@fmjcareers.com?subject=FMJ%20Capitals%20-%20Insights%20Updates"
-               class="ghost-btn"
-               style="padding-inline:12px;margin-top:4px;">
-              Request updates
-            </a>
-
-            <div class="tag-row">
-              <span class="tag-chip">Risk & behaviour</span>
-              <span class="tag-chip">Long-term mindset</span>
-              <span class="tag-chip">Portfolio structure</span>
-            </div>
-          </aside>
-        </div>
-      </section>
-
-
-      <!-- CAREERS -->
-      <section id="careers" class="section">
-        <div class="section-header">
-          <div>
-            <div class="section-kicker">Careers at FMJ</div>
-            <h2 class="section-title">Build a world-class firm with us</h2>
-          </div>
-          <p class="section-subtitle">
-            We are building a high-trust, high-performance environment for people who care about craft, ownership and clients.
-          </p>
-        </div>
-
-        <div class="cards-grid-2">
-          <article class="info-card">
-            <div class="info-card-label">What makes this a great place to work</div>
-            <h3 class="info-card-title">High standards, strong support</h3>
-            <p class="info-card-body">
-              We combine clear expectations with mentorship, practical feedback and meaningful responsibility from day one.
-            </p>
-            <ul class="info-card-list">
-              <li>Real ownership of impactful work</li>
-              <li>Collaborative team with direct communication</li>
-              <li>Learning-first culture across investing and operations</li>
-            </ul>
-          </article>
-
-          <article class="info-card">
-            <div class="info-card-label">Explore opportunities</div>
-            <h3 class="info-card-title">Careers are part of the FMJ experience</h3>
-            <p class="info-card-body">
-              This is a full company website first — and a careers destination too. Explore open roles and apply when there is a strong match.
-            </p>
-            <div class="hero-actions" style="margin: 10px 0 0;">
-              <a href="/careers" class="primary-btn">
-                View open roles <span>↗</span>
-              </a>
-              <a href="mailto:support@fmjcareers.com?subject=FMJ%20Capitals%20-%20Careers" class="ghost-btn">
-                Contact recruiting
-              </a>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <!-- CONTACT -->
-      <section id="contact" class="section">
-        <div class="section-header">
-          <div>
-            <div class="section-kicker">Contact</div>
-            <h2 class="section-title">Speak with FMJ Capitals</h2>
-          </div>
-          <p class="section-subtitle">
-            If you’re a serious long-term investor and want to explore working with us, we’d be glad to learn more.
-          </p>
-        </div>
-
-        <div class="contact-grid">
-          <div class="contact-card">
-            <h4>Prospective clients</h4>
-            <p>
-              For investment enquiries, please email:
-              <br>
-              <a href="mailto:support@fmjcareers.com?subject=FMJ%20Capitals%20-%20Investment%20Enquiry">
-                support@fmjcareers.com
-              </a>
-            </p>
-            <p>
-              It’s helpful to share whether you are an individual, professional, founder or institution,
-              your rough time horizon, and your main objectives.
-            </p>
-          </div>
-
-          <div class="contact-card">
-            <h4>Existing clients & general enquiries</h4>
-            <p>
-              For updates, support or general questions:
-              <br>
-              <a href="mailto:support@fmjcareers.com">
-                support@fmjcareers.com
-              </a>
-            </p>
-            <p>
-              We aim to respond as soon as reasonably possible on business days.
-            </p>
-          </div>
-        </div>
-
-        <div class="disclaimer">
-          <strong>Important information:</strong>
-          This website is for general information only and does not constitute investment, legal or tax advice,
-          or an offer or solicitation to buy or sell any financial instrument. Any investment strategy involves risk,
-          including the potential loss of principal. Past performance is not a reliable indicator of future results.
-          You should consider your own circumstances and seek independent professional advice before making any
-          investment decision.
-        </div>
+        <a href="/contact" class="btn btn-primary">Contact our team</a>
       </section>
     </div>
   </main>
 
   <footer>
     <div class="footer-inner">
-      <div>© 2025 FMJ Capitals. All rights reserved.</div>
-      <div class="footer-links">
-        <a href="#top">Back to top</a>
-        <span>·</span>
-        <a href="/careers">Careers</a>
-      </div>
+      <span>© {{ current_year if current_year else 2026 }} FMJ Capitals. All rights reserved.</span>
+      <span>This site provides general information and does not constitute investment advice.</span>
     </div>
   </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const counters = Array.from(document.querySelectorAll('[data-counter]'));
+      const faders = Array.from(document.querySelectorAll('.fade-in'));
+
+      counters.forEach(function (counter) {
+        const target = Number(counter.dataset.counter) || 0;
+        let value = 0;
+        const step = Math.max(1, Math.ceil(target / 26));
+
+        const timer = setInterval(function () {
+          value += step;
+          if (value >= target) {
+            value = target;
+            clearInterval(timer);
+          }
+          counter.textContent = value;
+        }, 34);
+      });
+
+      const observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.16 });
+
+      faders.forEach(function (el) {
+        observer.observe(el);
+      });
+    });
+  </script>
 </body>
 </html>
